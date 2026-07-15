@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "DEVELOPMENT",
+      "description": "AI for Software Development and Coding",
+      "imageUrl": "https://picsum.photos/seed/code-ai/600/400",
+      "imageHint": "coding programming"
+    },
+    {
+      "id": "VIDEO",
+      "description": "AI Video and Motion Generation",
+      "imageUrl": "https://picsum.photos/seed/video-ai/600/400",
+      "imageHint": "cinema production"
+    },
+    {
+      "id": "CHAT/LLM",
+      "description": "Conversational AI and LLMs",
+      "imageUrl": "https://picsum.photos/seed/chat-ai/600/400",
+      "imageHint": "robot talk"
+    },
+    {
+      "id": "WRITING",
+      "description": "AI Writing and Editorial Assistants",
+      "imageUrl": "https://picsum.photos/seed/writing-ai/600/400",
+      "imageHint": "writing author"
+    },
+    {
+      "id": "IMAGE GEN",
+      "description": "Generative Art and Image Creation",
+      "imageUrl": "https://picsum.photos/seed/art-ai/600/400",
+      "imageHint": "digital art"
+    },
+    {
+      "id": "DESIGN",
+      "description": "AI-Powered Design and Layout",
+      "imageUrl": "https://picsum.photos/seed/design-ai/600/400",
+      "imageHint": "graphic design"
+    },
+    {
+      "id": "PRODUCTIVITY",
+      "description": "AI Productivity and Workflow Tools",
+      "imageUrl": "https://picsum.photos/seed/productivity-ai/600/400",
+      "imageHint": "office focus"
+    }
+  ]
+}

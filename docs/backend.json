@@ -1,0 +1,91 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Public profile information for users.",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "notificationPending": { "type": "boolean", "description": "Flag to trigger celebration popup on approval." }
+      },
+      "required": ["id", "email", "displayName"]
+    },
+    "Tool": {
+      "title": "Tool",
+      "type": "object",
+      "description": "AI tool metadata and lifecycle status.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "initialDescription": { "type": "string" },
+        "toolUrl": { "type": "string", "format": "uri" },
+        "submitterId": { "type": "string" },
+        "submitterDisplayName": { "type": "string" },
+        "submitterEmail": { "type": "string", "format": "email" },
+        "status": { "type": "string" },
+        "health": { "type": "string", "enum": ["Healthy", "At Risk"] },
+        "pedagogicalNarrative": { "type": "string" },
+        "ogImageUrl": { "type": "string", "format": "uri" },
+        "upvotes": { "type": "number" },
+        "downvotes": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "tags": { "type": "object" },
+        "aiVetted": { "type": "boolean" },
+        "reportCard": {
+          "type": "object",
+          "properties": {
+            "security": { "type": "object", "properties": { "score": { "type": "number" }, "summary": { "type": "string" } } },
+            "ethics": { "type": "object", "properties": { "score": { "type": "number" }, "summary": { "type": "string" } } },
+            "pedagogy": { "type": "object", "properties": { "score": { "type": "number" }, "summary": { "type": "string" } } },
+            "readiness": { "type": "object", "properties": { "score": { "type": "number" }, "summary": { "type": "string" } } }
+          }
+        },
+        "overallVerdict": { "type": "string" }
+      },
+      "required": ["id", "title", "category", "toolUrl", "submitterId", "status", "health", "upvotes", "downvotes", "isVerified", "createdAt", "updatedAt"]
+    },
+    "ErrorReport": {
+      "title": "ErrorReport",
+      "type": "object",
+      "description": "User feedback regarding incorrect data.",
+      "properties": {
+        "reportId": { "type": "string" },
+        "targetToolId": { "type": "string" },
+        "toolName": { "type": "string" },
+        "reporterEmail": { "type": "string", "format": "email" },
+        "issueType": { "type": "string" },
+        "userFeedback": { "type": "string" },
+        "createdTimestamp": { "type": "string", "format": "date-time" },
+        "resolvedStatus": { "type": "string", "enum": ["pending", "reviewed"] }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com"]
+  },
+  "firestore": {
+    "/user_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User public profiles."
+    },
+    "/tools_submitted/{toolId}": {
+      "schema": { "$ref": "#/entities/Tool" },
+      "description": "Tools in the submission stage."
+    },
+    "/tools_published/{toolId}": {
+      "schema": { "$ref": "#/entities/Tool" },
+      "description": "Tools officially published and public."
+    },
+    "/tool_error_reports/{reportId}": {
+      "schema": { "$ref": "#/entities/ErrorReport" },
+      "description": "User-reported errors for auditing."
+    }
+  }
+}
