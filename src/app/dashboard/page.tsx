@@ -1,13 +1,12 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { GVSUHeader } from "@/components/GVSUHeader";
-import { 
-  useFirestore, 
-  useCollection, 
-  useMemoFirebase 
+import {
+  useFirestore,
+  useCollection,
+  useMemoFirebase
 } from "@/firebase";
 import { collection, query, where, limit } from "firebase/firestore";
 import { ToolSubmission } from "@/app/lib/tool-types";
@@ -16,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, Loader2, UserX, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+const STATUS_PUBLISHED = "Published";
 
 export default function Dashboard() {
   const { user, loading: authLoading, signIn } = useAuth();
@@ -49,25 +50,42 @@ export default function Dashboard() {
   const { data: rawTools, isLoading: toolsLoading } = useCollection<ToolSubmission>(submissionsQuery);
   const { data: rawPublished, isLoading: pubLoading } = useCollection<ToolSubmission>(publishedQuery);
 
+  const dataLoading = toolsLoading || pubLoading;
+
+  // Merge both collections and dedupe by id in case a tool briefly exists
+  // in both tools_submitted and tools_published during a publish operation.
   const tools = useMemo(() => {
-    const list = [...(rawTools || []), ...(rawPublished || [])];
-    return list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    const merged = new Map<string, ToolSubmission>();
+    [...(rawTools || []), ...(rawPublished || [])].forEach((tool) => {
+      if (tool.id) merged.set(tool.id, tool);
+    });
+
+    return Array.from(merged.values()).sort((a, b) => {
+      const aTime = a.createdAt?.seconds ?? a.publishedAt?.seconds ?? 0;
+      const bTime = b.createdAt?.seconds ?? b.publishedAt?.seconds ?? 0;
+      return bTime - aTime;
+    });
   }, [rawTools, rawPublished]);
 
   const stats = useMemo(() => ({
     total: tools.length,
-    published: tools.filter(t => t.status === "Published").length,
-    pending: tools.filter(t => t.status !== "Published").length,
+    published: tools.filter(t => t.status === STATUS_PUBLISHED).length,
+    pending: tools.filter(t => t.status !== STATUS_PUBLISHED).length,
   }), [tools]);
 
-  if (!mounted || (authLoading && !user)) return (
+  // Covers: still mounting, auth still resolving, or auth resolved to "no user"
+  // but we haven't yet decided to show the sign-in wall. Without this last case,
+  // the full dashboard would flash empty/zeroed-out content before the wall appears.
+  const showLoadingScreen = !mounted || authLoading || (!user && !showRestricted);
+
+  if (showLoadingScreen) return (
     <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-white">
       <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue mb-4" />
       <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Opening My Tools...</p>
     </div>
   );
 
-  if (!user && showRestricted) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
         <GVSUHeader />
@@ -112,7 +130,7 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Recent Activity</h3>
-          {tools.length === 0 && !toolsLoading ? (
+          {tools.length === 0 && !dataLoading ? (
             <div className="py-20 text-center border border-dashed rounded-3xl text-slate-400 italic text-sm">
               You haven't recommended any tools yet.
             </div>
@@ -126,7 +144,7 @@ export default function Dashboard() {
                   </div>
                   <Badge variant="outline" className={cn(
                     "text-[10px] font-bold uppercase py-1.5 px-6 rounded-lg",
-                    tool.status === "Published" ? "bg-green-50 text-green-600 border-green-100" : "bg-amber-50 text-amber-600 border-amber-100"
+                    tool.status === STATUS_PUBLISHED ? "bg-green-50 text-green-600 border-green-100" : "bg-amber-50 text-amber-600 border-amber-100"
                   )}>
                     {tool.status}
                   </Badge>

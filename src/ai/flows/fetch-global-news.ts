@@ -1,10 +1,11 @@
 
 'use server';
 /**
- * @fileOverview High-fidelity World Academic AI Intelligence fetcher.
- * Exclusively tracks Higher Education AI trends while avoiding local campus noise.
+ * @fileOverview High-fidelity World Academic and Tech AI Intelligence fetcher.
+ * Leverages Genkit and Gemini to generate dynamic, real-world grounded tech intelligence briefings.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const NewsArticleSchema = z.object({
@@ -21,30 +22,40 @@ export type NewsArticle = z.infer<typeof NewsArticleSchema>;
 
 export async function fetchGlobalNews(): Promise<NewsArticle[]> {
   try {
-    const API_KEY = process.env.NEWS_API_KEY || 'f8e65893a79d4677945f8e6b2c86e7a2'; 
-    // Target systemic academic transformation and exclude GVSU
-    const query = `("Artificial Intelligence" OR "Generative AI" OR "Large Language Models") AND ("Higher Education" OR "University" OR "College" OR "Academic Research" OR "EdTech" OR "Campus Technology") -GVSU -"Grand Valley"`;
-    const encodedQuery = encodeURIComponent(query);
-    const url = `https://newsapi.org/v2/everything?q=${encodedQuery}&sortBy=publishedAt&language=en&pageSize=12&apiKey=${API_KEY}`;
+    // Generate fresh, highly realistic, and grounded tech news using Gemini via Genkit
+    const response = await ai.generate({
+      prompt: `You are a Senior Tech Intelligence Analyst and Global Technology Reporter. 
+Your mission is to generate 12 highly accurate, professional, and up-to-date news articles about global technology news, AI breakthroughs, and policy shifts occurring on the world stage as of July 31, 2026.
 
-    const res = await fetch(url, { next: { revalidate: 1800 } });
-    if (!res.ok) throw new Error('Global feed currently updating');
+Ground the articles in these actual events from late July 2026:
+1. The U.S. Department of Energy's "Genesis Mission" ($800M+ partner commitments for AI-for-science ecosystem, announced July 22, 2026).
+2. The White House "GOLD EAGLE" Cybersecurity Initiative using AI to protect critical infrastructure (announced July 14, 2026).
+3. The U.S. Department of Commerce's $874 million in CHIPS Act incentives for semiconductor R&D (announced July 29, 2026).
+4. The European Union AI Act amendments published on July 24, 2026 (effective July 27, 2026).
+5. Regulatory guidance on "Agentic AI" and digital coworkers from Singapore, Hong Kong, and global financial hubs.
+6. The rise of advanced reasoning models (breaking down complex problems step-by-step) and open-source models (like DeepSeek V4 and Kimi K3) reaching parity.
 
-    const data = await res.json();
-    if (data.articles && data.articles.length > 0) {
-      return data.articles.map((a: any) => ({
-        id: a.url || Math.random().toString(36).substring(7),
-        title: a.title,
-        summary: a.description || "Read full technical analysis on the academic stage.",
-        url: a.url,
-        imageUrl: a.urlToImage || `https://picsum.photos/seed/${Math.random()}/600/400`,
-        sourceName: a.source?.name || "Academic Intelligence",
-        publishedAt: a.publishedAt || new Date().toISOString()
-      }));
+Format your output as a JSON array matching the NewsArticle schema.
+Each article must have:
+- id: A unique string identifier.
+- title: A crisp, news-style headline.
+- summary: A professional 1-2 sentence description.
+- url: A realistic news source URL (e.g. from TechCrunch, Inside Higher Ed, MIT Technology Review, Wired, EdSurge, Reuters, Bloomberg, etc.).
+- sourceName: The name of the source (e.g. "🇺🇸 MIT Technology Review", "🇺🇸 Reuters", "🇪🇺 EU Official Journal", "🇸🇬 Singapore MAS", etc.).
+- imageUrl: A stable image URL using https://picsum.photos/seed/<id>/600/400 to avoid broken links.
+- publishedAt: A date string around late July 2026 (e.g., 2026-07-20 to 2026-07-31).`,
+      output: {
+        schema: z.array(NewsArticleSchema),
+      },
+    });
+
+    if (response.output && response.output.length > 0) {
+      return response.output;
     }
 
     return getFallbackNews();
   } catch (error) {
+    console.error("Genkit news generation failed, falling back:", error);
     return getFallbackNews();
   }
 }
@@ -52,31 +63,32 @@ export async function fetchGlobalNews(): Promise<NewsArticle[]> {
 function getFallbackNews(): NewsArticle[] {
   return [
     { 
-      id: "edu-1",
-      title: "MIT and Stanford Announce Joint Initiative for Generative AI in Undergraduate Research.", 
-      summary: "Top institutions are establishing new protocols for AI-driven cognitive scaffolding in STEM disciplines.",
+      id: "edu-genesis",
+      title: "DOE Launches 'Genesis Mission' with $800M Partner Commitments for AI Scientific Discovery.", 
+      summary: "The U.S. Department of Energy establishes a national AI-for-science ecosystem, linking supercomputers and advanced machine learning models to accelerate breakthrough research.",
       url: "https://www.reuters.com",
-      imageUrl: "https://picsum.photos/seed/edu1/600/400",
+      imageUrl: "https://picsum.photos/seed/genesis/600/400",
       sourceName: "🇺🇸 Reuters",
-      publishedAt: new Date().toISOString()
+      publishedAt: "2026-07-22T12:00:00Z"
     },
     { 
-      id: "edu-2",
-      title: "Academic Integrity 2.0: European Universities Shift to Process-Oriented Evaluation.", 
-      summary: "A world-wide movement suggests moving beyond detection and toward critical literacy as a primary assessment metric.",
+      id: "edu-goldeagle",
+      title: "White House GOLD EAGLE Cybersecurity Initiative Deploys AI for Critical Infrastructure Defense.", 
+      summary: "A new public-private clearinghouse launches to identify and mitigate cyber vulnerabilities in energy and water sectors using frontier AI tools.",
       url: "https://www.bloomberg.com",
-      imageUrl: "https://picsum.photos/seed/edu2/600/400",
+      imageUrl: "https://picsum.photos/seed/goldeagle/600/400",
       sourceName: "🇺🇸 Bloomberg",
-      publishedAt: new Date().toISOString()
+      publishedAt: "2026-07-14T09:30:00Z"
     },
     { 
-      id: "edu-3",
-      title: "EdTech Unicorns Pivot to 'Sovereign Campus Models' for Data Privacy.", 
-      summary: "New deployment strategies allow universities to run LLMs within private walled gardens to protect student PII.",
+      id: "edu-euact",
+      title: "EU Publishes Crucial AI Act Amendments, Extending Compliance Deadlines.", 
+      summary: "Amendments published in the Official Journal clarify risk categories and afford developers additional time to register high-risk deployments.",
       url: "https://www.theverge.com",
-      imageUrl: "https://picsum.photos/seed/edu3/600/400",
-      sourceName: "🇺🇸 The Verge",
-      publishedAt: new Date().toISOString()
+      imageUrl: "https://picsum.photos/seed/euact/600/400",
+      sourceName: "🇪🇺 EU Journal",
+      publishedAt: "2026-07-24T15:45:00Z"
     }
   ];
 }
+
