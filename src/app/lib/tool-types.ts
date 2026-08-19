@@ -7,7 +7,8 @@ export type ToolStatus =
   | "Updated" 
   | "Completed" 
   | "Published"
-  | "Suspended";
+  | "Suspended"
+  | "Rejected";
 
 export const TOOL_STAGES: ToolStatus[] = [
   "Submitted",
@@ -17,7 +18,8 @@ export const TOOL_STAGES: ToolStatus[] = [
   "Updated",
   "Completed",
   "Published",
-  "Suspended"
+  "Suspended",
+  "Rejected"
 ];
 
 export type ToolHealth = "Healthy" | "At Risk";
@@ -99,5 +101,47 @@ export interface Message {
   senderName: string;
   content: string;
   isAdmin: boolean;
+  createdAt: any;
+}
+
+export interface UserReport {
+  id: string;
+  reportId?: string;
+  toolId?: string;
+  toolName?: string;
+  toolUrl?: string;
+  reportedBy?: string;
+  reporterEmail?: string;
+  reporterName?: string;
+  issueType?: string;
+  reason?: string;
+  description?: string;
+  comments?: string;
+  status: "Pending" | "pending" | "Resolved" | "resolved" | "Dismissed" | "dismissed";
+  createdAt: any;
+}
+
+export interface FeedbackPost {
+  id: string;
+  title: string;
+  description: string;
+  category: "BUG" | "FEATURE" | "IMPROVEMENT";
+  status: "OPEN" | "IN_PROGRESS" | "COMPLETED_PENDING_APPROVAL" | "VERIFIED_CLOSED" | "REOPENED";
+  authorId: string;
+  authorName: string;
+  authorEmail: string;
+  upvotesCount: number;
+  contributors: string[]; // List of user UIDs merged into this feedback post
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface ReleaseChangelog {
+  id: string;
+  version: string;
+  releaseDate: any;
+  title: string;
+  highlights: string[];
+  techNotes: string[];
   createdAt: any;
 }
