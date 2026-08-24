@@ -58,6 +58,26 @@ service cloud.firestore {
     // 6. REPORTS
     match /reports/{reportId} {
       allow create: if request.auth != null;
+      allow read: if request.auth != null && resource.data.reporterEmail == request.auth.token.email;
+    }
+
+    // 7. COMMUNITY FEEDBACK
+    match /feedbackPosts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if isAdmin() || (request.auth != null && (resource.data.authorUid == request.auth.uid || request.auth.uid in resource.data.contributors));
+      allow delete: if isAdmin();
+    }
+
+    match /feedbackUpvotes/{voteId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 8. CHANGELOGS
+    match /releaseChangelogs/{releaseId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

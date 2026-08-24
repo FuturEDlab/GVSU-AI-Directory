@@ -5,10 +5,12 @@ import { useAuth } from "@/lib/auth-context";
 import { useSearch } from "@/lib/search-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X } from "lucide-react";
+import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ReportModal } from "./ReportModal";
 import { useRouter, usePathname } from "next/navigation";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function GVSUHeader() {
   const { user, signIn, logOut, isAdmin } = useAuth();
@@ -74,10 +76,60 @@ export function GVSUHeader() {
       </div>
 
       <div className="py-4 px-4 sm:px-12 flex items-center justify-between gap-8 h-[72px]">
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 bg-gvsuBlue rounded flex items-center justify-center text-white font-bold text-lg">GV</div>
-          <span className="text-gvsuBlue font-serif text-lg sm:text-xl font-bold tracking-tight uppercase leading-none">GRAND VALLEY STATE UNIVERSITY</span>
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          {user && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="hover:bg-slate-100 shrink-0">
+                  <Menu className="h-6 w-6 text-gvsuBlue" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-white">
+                <SheetHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
+                      <AvatarFallback className="bg-gvsuBlue text-white font-bold">
+                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-left">
+                      <SheetTitle className="text-sm font-bold text-slate-900">{user.displayName || "Laker User"}</SheetTitle>
+                      <span className="text-xs text-slate-500 truncate w-40">{user.email}</span>
+                    </div>
+                  </div>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto py-4">
+                  <nav className="space-y-1 px-3">
+                    <Link href="/" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                      <Home className="h-4 w-4" /> Dashboard
+                    </Link>
+                    <Link href="/reports" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/reports' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                      <Inbox className="h-4 w-4" /> Your Reports
+                    </Link>
+                    <Link href="/help" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/help' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                      <HelpCircle className="h-4 w-4" /> Help & Support
+                    </Link>
+                    <Link href="/help/changelog" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/help/changelog' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                      <FileText className="h-4 w-4" /> Changelog
+                    </Link>
+                  </nav>
+                </div>
+                <div className="p-4 border-t border-slate-100">
+                  <Link href="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/settings' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                    <Settings className="h-4 w-4" /> Settings
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+          <Link href="/" className="flex items-center gap-3 shrink-0">
+            <div className="w-9 h-9 bg-gvsuBlue rounded flex items-center justify-center text-white font-bold text-lg">GV</div>
+            <span className="text-gvsuBlue font-serif text-lg sm:text-xl font-bold tracking-tight uppercase leading-none hidden sm:block">GRAND VALLEY STATE UNIVERSITY</span>
+            <span className="text-gvsuBlue font-serif text-lg font-bold tracking-tight uppercase leading-none sm:hidden">GVSU</span>
+          </Link>
+        </div>
 
         <div className="relative w-full max-w-[360px] hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

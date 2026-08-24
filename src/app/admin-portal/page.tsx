@@ -50,6 +50,7 @@ import { Tagger } from "@/components/admin/governance/Tagger";
 import { cn } from "@/lib/utils";
 import { fetchGlobalNews } from "@/ai/flows/fetch-global-news";
 import { automatedVettingAgent } from "@/ai/flows/admin-generates-tool-narrative-and-image";
+import { AdminFeedbackTab } from "@/components/admin/governance/AdminFeedbackTab";
 
 const INITIAL_TAGS: ToolTags = {
   security_privacy: [],
@@ -96,7 +97,7 @@ export default function AdminPortal() {
   const [draftTags, setDraftTags] = useState<ToolTags>(INITIAL_TAGS);
 
   // Top-level Navigation & Sub-tab navigation
-  const [topTab, setTopTab] = useState<"moderation" | "reports">("moderation");
+  const [topTab, setTopTab] = useState<"moderation" | "reports" | "feedback">("moderation");
   const [moderationTab, setModerationTab] = useState<string>("pending");
 
   // User Reports State
@@ -485,6 +486,15 @@ export default function AdminPortal() {
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={() => setTopTab("feedback")}
+                  className={cn(
+                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5",
+                    topTab === "feedback" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  Community Feedback
+                </button>
               </div>
 
               <Button
@@ -742,7 +752,7 @@ export default function AdminPortal() {
                 )}
               </section>
             </div>
-          ) : (
+          ) : topTab === "reports" ? (
             /* Tab 2: User Reports layout */
             <div className="flex-1 flex gap-8 min-h-0">
               <aside className="w-[380px] flex flex-col gap-4 shrink-0 overflow-hidden">
@@ -983,7 +993,9 @@ export default function AdminPortal() {
                 )}
               </section>
             </div>
-          )}
+          ) : topTab === "feedback" ? (
+            <AdminFeedbackTab />
+          ) : null}
         </div>
       </main>
     </div>

@@ -65,19 +65,11 @@ export function useCollection<T = any>(
         setError(null);
         setIsLoading(false);
       },
-      async (err: FirestoreError) => {
-        // Handle listener failure centrally
-        const permissionError = new FirestorePermissionError({
-          path: (memoizedTargetRefOrQuery as any).path || 'query',
-          operation: 'list',
-        } satisfies SecurityRuleContext);
-
-        // Emit the error for the global listener
-        errorEmitter.emit('permission-error', permissionError);
-        
+      (err: FirestoreError) => {
+        console.error("Firestore onSnapshot error:", err);
         // Update local component state
         setData([]); 
-        setError('Restricted Access');
+        setError(err.message || 'Restricted Access');
         setIsLoading(false);
       }
     );
