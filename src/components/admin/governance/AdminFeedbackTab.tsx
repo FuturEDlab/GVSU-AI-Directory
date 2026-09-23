@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase/hooks";
-import { collection, query, orderBy, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function AdminFeedbackTab() {
   
   const postsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, "feedbackPosts"), orderBy("createdAt", "desc"));
+    return query(collection(firestore, "feedbackPosts"), orderBy("createdAt", "desc"), limit(50));
   }, [firestore]);
 
   const { data: posts, isLoading } = useCollection<FeedbackPost>(postsQuery);

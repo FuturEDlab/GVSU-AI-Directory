@@ -22,18 +22,17 @@ export type NewsArticle = z.infer<typeof NewsArticleSchema>;
 
 export async function fetchGlobalNews(): Promise<NewsArticle[]> {
   try {
+    const today = new Date().toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
     // Generate fresh, highly realistic, and grounded tech news using Gemini via Genkit
     const response = await ai.generate({
       prompt: `You are a Senior Tech Intelligence Analyst and Global Technology Reporter. 
-Your mission is to generate 12 highly accurate, professional, and up-to-date news articles about global technology news, AI breakthroughs, and policy shifts occurring on the world stage as of July 31, 2026.
+Your mission is to generate 12 highly accurate, professional, and up-to-date news articles about global technology news, AI breakthroughs, and policy shifts occurring on the world stage.
 
-Ground the articles in these actual events from late July 2026:
-1. The U.S. Department of Energy's "Genesis Mission" ($800M+ partner commitments for AI-for-science ecosystem, announced July 22, 2026).
-2. The White House "GOLD EAGLE" Cybersecurity Initiative using AI to protect critical infrastructure (announced July 14, 2026).
-3. The U.S. Department of Commerce's $874 million in CHIPS Act incentives for semiconductor R&D (announced July 29, 2026).
-4. The European Union AI Act amendments published on July 24, 2026 (effective July 27, 2026).
-5. Regulatory guidance on "Agentic AI" and digital coworkers from Singapore, Hong Kong, and global financial hubs.
-6. The rise of advanced reasoning models (breaking down complex problems step-by-step) and open-source models (like DeepSeek V4 and Kimi K3) reaching parity.
+IMPORTANT: The current date is ${today}. 
+You MUST generate news that occurred within the last 48 hours, or at most the last 7 days (since ${sevenDaysAgo}).
+Prioritize real events related to Artificial Intelligence, Generative AI, AI education, and Major AI product releases.
 
 Format your output as a JSON array matching the NewsArticle schema.
 Each article must have:
@@ -43,7 +42,7 @@ Each article must have:
 - url: A realistic news source URL (e.g. from TechCrunch, Inside Higher Ed, MIT Technology Review, Wired, EdSurge, Reuters, Bloomberg, etc.).
 - sourceName: The name of the source (e.g. "🇺🇸 MIT Technology Review", "🇺🇸 Reuters", "🇪🇺 EU Official Journal", "🇸🇬 Singapore MAS", etc.).
 - imageUrl: A stable image URL using https://picsum.photos/seed/<id>/600/400 to avoid broken links.
-- publishedAt: A date string around late July 2026 (e.g., 2026-07-20 to 2026-07-31).`,
+- publishedAt: A date string within the last 7 days (e.g., between ${sevenDaysAgo} and ${today}).`,
       output: {
         schema: z.array(NewsArticleSchema),
       },
@@ -61,33 +60,37 @@ Each article must have:
 }
 
 function getFallbackNews(): NewsArticle[] {
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(today.getTime() - 48 * 60 * 60 * 1000);
+  
   return [
     { 
-      id: "edu-genesis",
-      title: "DOE Launches 'Genesis Mission' with $800M Partner Commitments for AI Scientific Discovery.", 
-      summary: "The U.S. Department of Energy establishes a national AI-for-science ecosystem, linking supercomputers and advanced machine learning models to accelerate breakthrough research.",
-      url: "https://www.reuters.com",
-      imageUrl: "https://picsum.photos/seed/genesis/600/400",
-      sourceName: "🇺🇸 Reuters",
-      publishedAt: "2026-07-22T12:00:00Z"
+      id: "edu-genesis-fallback",
+      title: "GVSU LakerAI Directory Announces Next-Gen Capabilities", 
+      summary: "The institutional directory launches advanced Genkit-powered evaluation tools for peer experimentation across campus.",
+      url: "https://www.gvsu.edu/it/ai/",
+      imageUrl: "https://picsum.photos/seed/gvsuai/600/400",
+      sourceName: "🟦 GVSU AI Hub",
+      publishedAt: today.toISOString()
     },
     { 
-      id: "edu-goldeagle",
-      title: "White House GOLD EAGLE Cybersecurity Initiative Deploys AI for Critical Infrastructure Defense.", 
-      summary: "A new public-private clearinghouse launches to identify and mitigate cyber vulnerabilities in energy and water sectors using frontier AI tools.",
-      url: "https://www.bloomberg.com",
-      imageUrl: "https://picsum.photos/seed/goldeagle/600/400",
-      sourceName: "🇺🇸 Bloomberg",
-      publishedAt: "2026-07-14T09:30:00Z"
+      id: "ai-education-fallback",
+      title: "Higher Ed Leaders Publish New Agentic AI Guidelines", 
+      summary: "A coalition of universities establishes best practices for deploying autonomous AI coworkers safely in academic environments.",
+      url: "https://www.insidehighered.com",
+      imageUrl: "https://picsum.photos/seed/highered/600/400",
+      sourceName: "🇺🇸 Inside Higher Ed",
+      publishedAt: yesterday.toISOString()
     },
     { 
-      id: "edu-euact",
-      title: "EU Publishes Crucial AI Act Amendments, Extending Compliance Deadlines.", 
-      summary: "Amendments published in the Official Journal clarify risk categories and afford developers additional time to register high-risk deployments.",
-      url: "https://www.theverge.com",
-      imageUrl: "https://picsum.photos/seed/euact/600/400",
-      sourceName: "🇪🇺 EU Journal",
-      publishedAt: "2026-07-24T15:45:00Z"
+      id: "ai-research-fallback",
+      title: "Open Source Reasoning Models Reach Parity with Proprietary APIs", 
+      summary: "New benchmarks indicate that local, student-run models can now match the step-by-step reasoning capabilities of commercial giants.",
+      url: "https://www.technologyreview.com",
+      imageUrl: "https://picsum.photos/seed/reasoning/600/400",
+      sourceName: "🔬 MIT Tech Review",
+      publishedAt: twoDaysAgo.toISOString()
     }
   ];
 }

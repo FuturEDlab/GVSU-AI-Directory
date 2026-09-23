@@ -35,27 +35,29 @@ export function ToolCard({ tool }: ToolCardProps) {
     setMounted(true);
   }, []);
 
+  // Defer comments subscription until user opens the comments UI
   useEffect(() => {
-    if (!tool.id || !mounted) return;
+    if (!tool.id || !mounted || !showComments) return;
     const q = query(collection(db, "tools_published", tool.id, "comments"), orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return () => unsubscribe();
-  }, [tool.id, mounted]);
+  }, [tool.id, mounted, showComments]);
 
-  useEffect(() => {
-    if (!tool.id || !user || !mounted) {
-      setUserVote(null);
-      return;
+  // Fetch user's vote state on-demand when user is logged in and interacts
+  const checkUserVote = async () => {
+    if (!tool.id || !user || userVote !== null) return;
+    try {
+      const voteRef = doc(db, "tools_published", tool.id, "user_votes", user.uid);
+      const docSnap = await getDoc(voteRef);
+      if (docSnap.exists()) {
+        setUserVote(docSnap.data().type);
+      }
+    } catch (err) {
+      // Silently catch permission issues or offline state
     }
-    const voteRef = doc(db, "tools_published", tool.id, "user_votes", user.uid);
-    const unsubscribe = onSnapshot(voteRef, (docSnap) => {
-      if (docSnap.exists()) setUserVote(docSnap.data().type);
-      else setUserVote(null);
-    });
-    return () => unsubscribe();
-  }, [tool.id, user, mounted]);
+  };
 
   const handleVote = async (type: 'like' | 'dislike') => {
     if (!user) {
@@ -69,15 +71,18 @@ export function ToolCard({ tool }: ToolCardProps) {
       const existingVote = voteSnap.exists() ? voteSnap.data().type : null;
       if (existingVote === type) {
         await deleteDoc(voteRef);
+        setUserVote(null);
         await updateDoc(toolRef, { [type === 'like' ? 'upvotes' : 'downvotes']: increment(-1) });
       } else if (existingVote) {
         await updateDoc(voteRef, { type });
+        setUserVote(type);
         await updateDoc(toolRef, {
           upvotes: increment(type === 'like' ? 1 : -1),
           downvotes: increment(type === 'dislike' ? 1 : -1)
         });
       } else {
         await setDoc(voteRef, { type, userId: user.uid, createdAt: serverTimestamp() });
+        setUserVote(type);
         await updateDoc(toolRef, { [type === 'like' ? 'upvotes' : 'downvotes']: increment(1) });
       }
     } catch (e) {
@@ -110,6 +115,8 @@ export function ToolCard({ tool }: ToolCardProps) {
           <img 
             src={tool.ogImageUrl} 
             alt={tool.title} 
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
             onError={() => setImageError(true)} 
           />

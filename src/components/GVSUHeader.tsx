@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSearch } from "@/lib/search-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings } from "lucide-react";
+import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ReportModal } from "./ReportModal";
 import { useRouter, usePathname } from "next/navigation";
@@ -67,6 +67,9 @@ export function GVSUHeader() {
           <Link href="/" className="hover:text-slate-200 transition-colors">
             DISCOVERY HUB
           </Link>
+          <Link href="/prompt-library" className="hover:text-slate-200 transition-colors flex items-center gap-1 font-bold text-yellow-300">
+            <Sparkles className="w-3 h-3 text-yellow-300" /> PROMPT LIBRARY
+          </Link>
           {user && isAdmin && (
             <Link href="/admin-portal" className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3" /> ADMIN PORTAL
@@ -104,6 +107,9 @@ export function GVSUHeader() {
                   <nav className="space-y-1 px-3">
                     <Link href="/" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
                       <Home className="h-4 w-4" /> Dashboard
+                    </Link>
+                    <Link href="/prompt-library" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/prompt-library' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+                      <Sparkles className="h-4 w-4 text-gvsuBlue" /> Prompt Library
                     </Link>
                     <Link href="/reports" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/reports' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
                       <Inbox className="h-4 w-4" /> Your Reports

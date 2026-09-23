@@ -29,7 +29,7 @@ export function NewsTicker() {
     : [{ text: "Checking the world for Higher Ed AI updates...", source: "WORLD RADAR", url: "#" }];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-11 flex items-center overflow-hidden z-[60] shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-11 flex items-center overflow-hidden z-50 shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
       <div className="bg-gvsuBlue text-white h-full px-5 flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase z-10 shrink-0 border-r border-white/10">
         <Activity className="w-3.5 h-3.5 animate-pulse" />
         WORLD RADAR
