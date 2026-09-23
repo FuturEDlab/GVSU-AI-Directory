@@ -63,6 +63,8 @@ export function NewsGrid() {
                     <img 
                       src={article.imageUrl || `https://picsum.photos/seed/${article.id}/600/400`} 
                       alt={article.title} 
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     <div className="absolute top-4 left-4">

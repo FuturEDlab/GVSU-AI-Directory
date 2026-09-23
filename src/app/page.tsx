@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { GVSUHeader } from "@/components/GVSUHeader";
 import { SubmissionModal } from "@/components/SubmissionModal";
 import { ToolCard } from "@/components/ToolCard";
+import { LakerAIAssistant } from "@/components/LakerAIAssistant";
 import { NewsGrid } from "@/components/news/NewsGrid";
 import { 
   useFirestore, 
@@ -15,89 +16,42 @@ import {
   collection, 
   query, 
   where,
-  doc,
-  serverTimestamp,
-  getDocs,
-  getDoc,
-  limit,
-  writeBatch,
-  setDoc
+  limit
 } from "firebase/firestore";
 import { ToolSubmission } from "@/app/lib/tool-types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Search, ArrowRight, Filter, LayoutGrid, Sparkles, Activity, Globe } from "lucide-react";
+import { Search, ArrowRight, Filter, LayoutGrid, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SEED_DATA } from "@/app/lib/seed-data";
 import { useSearch } from "@/lib/search-context";
 import { useDebounce } from "@/hooks/use-debounce";
-import { fetchGlobalNews } from "@/ai/flows/fetch-global-news";
-
-const NEWS_CACHE_KEY = 'laker_ai_news_cache';
-const NEWS_TIMESTAMP_KEY = 'laker_ai_news_ts';
-const THIRTY_MINUTES = 30 * 60 * 1000;
 
 export default function Home() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery } = useSearch();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   const [activeCategory, setActiveCategory] = useState("ALL TOOLS");
   const [mounted, setMounted] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
-  const seedingAttempted = useRef(false);
+  const [visibleCount, setVisibleCount] = useState(24);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Professional 30-minute news caching logic
-  useEffect(() => {
-    if (!firestore || !mounted) return;
-
-    const handleNewsRefresh = async () => {
-      const savedTs = localStorage.getItem(NEWS_TIMESTAMP_KEY);
-      const now = Date.now();
-      
-      if (savedTs && now - parseInt(savedTs) < THIRTY_MINUTES) {
-        return; // Cache is still fresh
-      }
-
-      try {
-        const articles = await fetchGlobalNews();
-        if (articles && articles.length > 0) {
-          const batch = writeBatch(firestore);
-          const oldNews = await getDocs(collection(firestore, 'global_news'));
-          oldNews.docs.forEach(d => batch.delete(d.ref));
-          
-          articles.forEach(article => {
-            const artRef = doc(collection(firestore, 'global_news'));
-            batch.set(artRef, { ...article, publishedAt: article.publishedAt || new Date().toISOString() });
-          });
-          
-          await batch.commit();
-          localStorage.setItem(NEWS_TIMESTAMP_KEY, now.toString());
-        }
-      } catch (e) {
-        console.error("News sync delayed:", e);
-      }
-    };
-
-    handleNewsRefresh();
-  }, [firestore, mounted]);
-
   const toolsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, "tools_published"),
-      where("status", "==", "Published")
+      where("status", "==", "Published"),
+      limit(visibleCount)
     );
-  }, [firestore]);
+  }, [firestore, visibleCount]);
 
   const { data: allTools, isLoading } = useCollection<ToolSubmission>(toolsQuery);
 
@@ -145,18 +99,17 @@ export default function Home() {
           </div>
 
           <div className="max-w-xl mx-auto">
-            <div className="relative flex items-center bg-white rounded-2xl h-14 border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-gvsuBlue/20 transition-all overflow-hidden">
-              <div className="px-5 flex items-center text-slate-400"><Search className="w-4 h-4" /></div>
-              <Input 
-                placeholder="Search institutional resources..." 
-                className="bg-transparent border-none shadow-none text-base h-full focus-visible:ring-0 px-0 text-slate-900 placeholder:text-slate-400 font-sans" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-              />
-              <Button variant="ghost" onClick={() => setShowFilters(!showFilters)} className={cn("h-full px-6 rounded-none border-l border-slate-100 text-[10px] font-bold tracking-widest uppercase", showFilters ? "text-gvsuBlue bg-slate-50" : "text-slate-400")}>
-                <Filter className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+            <LakerAIAssistant 
+              rightElement={
+                <Button 
+                  variant="ghost" 
+                  onClick={(e) => { e.stopPropagation(); setShowFilters(!showFilters); }} 
+                  className={cn("h-full px-6 rounded-none border-l border-slate-100 text-[10px] font-bold tracking-widest uppercase relative z-10", showFilters ? "text-gvsuBlue bg-slate-50" : "text-slate-400")}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                </Button>
+              }
+            />
           </div>
         </div>
       </section>
@@ -208,8 +161,22 @@ export default function Home() {
               <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No matching tools in directory.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {filteredTools.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
+            <div className="space-y-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {filteredTools.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
+              </div>
+
+              {allTools && allTools.length >= visibleCount && (
+                <div className="flex justify-center pt-6">
+                  <Button 
+                    variant="outline" 
+                    className="border-gvsuBlue text-gvsuBlue font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-gvsuBlue hover:text-white transition-all shadow-sm"
+                    onClick={() => setVisibleCount(prev => prev + 24)}
+                  >
+                    LOAD MORE TOOLS
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -232,3 +199,4 @@ export default function Home() {
     </div>
   );
 }
+

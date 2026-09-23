@@ -37,22 +37,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = !!user && ADMIN_WHITELIST.includes(user.email?.toLowerCase() || "");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         const email = currentUser.email?.toLowerCase() || "";
         if (email.endsWith("@gvsu.edu") || email.endsWith("@mail.gvsu.edu")) {
           setUser(currentUser);
           
           if (ADMIN_WHITELIST.includes(email)) {
-            try {
-              await setDoc(doc(db, "admins", currentUser.uid), {
-                id: currentUser.uid,
-                email: currentUser.email,
-                displayName: currentUser.displayName || "Laker Administrator"
-              }, { merge: true });
-            } catch (error) {
+            // Decouple setDoc write from auth loading critical path
+            setDoc(doc(db, "admins", currentUser.uid), {
+              id: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName || "Laker Administrator"
+            }, { merge: true }).catch(() => {
               // Silently ignore permission issues for auto-profiling
-            }
+            });
           }
         } else {
           signOut(auth).then(() => {
