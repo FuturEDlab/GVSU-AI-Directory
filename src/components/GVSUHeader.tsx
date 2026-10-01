@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSearch } from "@/lib/search-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings, Sparkles } from "lucide-react";
+import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings, Sparkles, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { ReportModal } from "./ReportModal";
 import { useRouter, usePathname } from "next/navigation";
@@ -13,7 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function GVSUHeader() {
-  const { user, signIn, logOut, isAdmin } = useAuth();
+  const { user, loading: authLoading, signIn, logOut, isAdmin } = useAuth();
   const { searchQuery, setSearchQuery } = useSearch();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -153,7 +153,11 @@ export function GVSUHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          {user ? (
+          {authLoading ? (
+            <div className="flex items-center justify-center px-4 h-10 min-w-[80px]">
+              <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+            </div>
+          ) : user ? (
             <div className="flex items-center gap-4">
               <Link href="/dashboard" className="text-xs font-bold flex items-center gap-2 text-gvsuBlue hover:text-midnight transition-colors">
                 <UserIcon className="w-3.5 h-3.5" /> MY TOOLS

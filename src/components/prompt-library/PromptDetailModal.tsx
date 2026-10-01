@@ -26,7 +26,7 @@ export function PromptDetailModal({ isOpen, onClose, prompt }: PromptDetailModal
 
   const promptTitle = prompt.title || prompt.promptName;
   const promptTemplateText = prompt.promptTemplate || prompt.promptText;
-  const targetModel = prompt.targetModel || prompt.model;
+  const targetModel = (prompt.targetModel === "Other" && prompt.customModel) ? prompt.customModel : (prompt.targetModel || prompt.model);
   const authorDisplay = prompt.authorName || prompt.submittedByEmail || "Community Member";
 
   const handleCopy = () => {

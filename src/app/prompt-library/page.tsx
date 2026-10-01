@@ -65,6 +65,7 @@ function PromptLibraryContent() {
       const description = (prompt.description || "").toLowerCase();
       const category = (prompt.category || "").toLowerCase();
       const model = (prompt.targetModel || prompt.model || "").toLowerCase();
+      const customModelStr = (prompt.customModel || "").toLowerCase();
       const toolName = (prompt.associatedToolName || "").toLowerCase();
       const tagsStr = (prompt.tags || []).join(" ").toLowerCase();
 
@@ -75,12 +76,14 @@ function PromptLibraryContent() {
         description.includes(q) ||
         category.includes(q) ||
         model.includes(q) ||
+        customModelStr.includes(q) ||
         toolName.includes(q) ||
         tagsStr.includes(q);
 
       const matchesModel = 
         selectedModel === "All Models" || 
-        (prompt.targetModel || prompt.model) === selectedModel;
+        (prompt.targetModel || prompt.model) === selectedModel ||
+        (selectedModel === "Other" && prompt.targetModel === "Other");
 
       const matchesCategory = 
         selectedCategory === "All Categories" || 

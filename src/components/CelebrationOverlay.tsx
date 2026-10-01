@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUser, useFirestore, useDoc } from "@/firebase/hooks";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase/hooks";
 import { doc, updateDoc } from "firebase/firestore";
 import {
   AlertDialog,
@@ -19,7 +19,12 @@ import { UserProfile } from "@/app/lib/tool-types";
 export function CelebrationOverlay() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const profileRef = user ? doc(firestore, "user_profiles", user.uid) : null;
+
+  const profileRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, "user_profiles", user.uid);
+  }, [firestore, user?.uid]);
+
   const { data: profile } = useDoc<UserProfile>(profileRef);
   const [show, setShow] = useState(false);
 
