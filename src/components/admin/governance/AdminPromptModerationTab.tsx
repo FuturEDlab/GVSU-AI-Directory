@@ -32,6 +32,7 @@ export function AdminPromptModerationTab() {
     description: "",
     promptTemplate: "",
     targetModel: "",
+    customModel: "",
     category: "",
     associatedToolId: "none"
   });
@@ -102,11 +103,17 @@ export function AdminPromptModerationTab() {
 
   const handleStartEdit = (prompt: PromptSubmission) => {
     setEditingPrompt(prompt);
+    const rawTarget = prompt.targetModel || (AI_MODELS.includes(prompt.model) ? prompt.model : "Other");
+    const isOther = rawTarget === "Other" || !!prompt.customModel;
+    const initialTargetModel = isOther ? "Other" : rawTarget;
+    const initialCustomModel = prompt.customModel || (isOther && prompt.model !== "Other" ? prompt.model : "");
+
     setEditFormData({
       title: prompt.title || prompt.promptName || "",
       description: prompt.description || "",
       promptTemplate: prompt.promptTemplate || prompt.promptText || "",
-      targetModel: prompt.targetModel || prompt.model || "",
+      targetModel: initialTargetModel,
+      customModel: initialCustomModel,
       category: prompt.category || "",
       associatedToolId: prompt.associatedToolId || "none"
     });
@@ -114,6 +121,12 @@ export function AdminPromptModerationTab() {
 
   const handleSaveEdit = async () => {
     if (!firestore || !editingPrompt?.id) return;
+
+    if (editFormData.targetModel === "Other" && !editFormData.customModel.trim()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Please enter an AI model name." });
+      return;
+    }
+
     setIsProcessing(editingPrompt.id);
 
     try {
@@ -128,6 +141,8 @@ export function AdminPromptModerationTab() {
         }
       }
 
+      const cleanCustomModel = editFormData.targetModel === "Other" ? editFormData.customModel.trim() : undefined;
+
       const docRef = doc(firestore, "promptLibrary", editingPrompt.id);
       await updateDoc(docRef, {
         title: editFormData.title,
@@ -136,7 +151,8 @@ export function AdminPromptModerationTab() {
         promptTemplate: editFormData.promptTemplate,
         promptText: editFormData.promptTemplate,
         targetModel: editFormData.targetModel,
-        model: editFormData.targetModel,
+        model: cleanCustomModel || editFormData.targetModel,
+        customModel: cleanCustomModel,
         category: editFormData.category,
         associatedToolId,
         associatedToolName,
@@ -162,7 +178,7 @@ export function AdminPromptModerationTab() {
       ) : (
         list.map((prompt) => {
           const title = prompt.title || prompt.promptName;
-          const model = prompt.targetModel || prompt.model;
+          const model = (prompt.targetModel === "Other" && prompt.customModel) ? prompt.customModel : (prompt.targetModel || prompt.model);
           const author = prompt.authorName || prompt.submittedByEmail;
           const isPending = prompt.status === "PENDING";
           const isApproved = prompt.status === "APPROVED";
@@ -333,7 +349,11 @@ export function AdminPromptModerationTab() {
                 <Label>Target AI Model</Label>
                 <Select
                   value={editFormData.targetModel}
-                  onValueChange={(val) => setEditFormData((prev) => ({ ...prev, targetModel: val }))}
+                  onValueChange={(val) => setEditFormData((prev) => ({
+                    ...prev,
+                    targetModel: val,
+                    customModel: val === "Other" ? prev.customModel : ""
+                  }))}
                 >
                   <SelectTrigger><SelectValue placeholder="Model" /></SelectTrigger>
                   <SelectContent>
@@ -342,6 +362,17 @@ export function AdminPromptModerationTab() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {editFormData.targetModel === "Other" && (
+                  <div className="pt-2 space-y-1">
+                    <Label className="text-xs">Other AI Model Name</Label>
+                    <Input
+                      placeholder="e.g. Claude Opus 6, GPT-6..."
+                      value={editFormData.customModel}
+                      onChange={(e) => setEditFormData((prev) => ({ ...prev, customModel: e.target.value }))}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

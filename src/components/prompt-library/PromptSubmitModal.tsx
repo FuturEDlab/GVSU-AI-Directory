@@ -65,6 +65,7 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
     promptTemplate: "",
     systemPrompt: "",
     targetModel: "",
+    customModel: "",
     category: "",
     tagsInput: "",
     associatedToolId: "none",
@@ -91,6 +92,7 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
       promptTemplate: "",
       systemPrompt: "",
       targetModel: "",
+      customModel: "",
       category: "",
       tagsInput: "",
       associatedToolId: "none",
@@ -146,6 +148,15 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
       return;
     }
 
+    if (formData.targetModel === "Other" && !formData.customModel.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please enter an AI model name."
+      });
+      return;
+    }
+
     if (!formData.category) {
       toast({
         variant: "destructive",
@@ -180,6 +191,8 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
       const authorEmail = user.email || "Unknown Author";
       const authorName = user.displayName || user.email?.split("@")[0] || "Anonymous";
 
+      const cleanCustomModel = formData.targetModel === "Other" ? formData.customModel.trim() : undefined;
+
       const promptData: PromptSubmission = {
         // Core fields (supporting both new & legacy naming)
         title: cleanTitle,
@@ -191,7 +204,8 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
 
         // Classification
         targetModel: formData.targetModel,
-        model: formData.targetModel,
+        model: cleanCustomModel || formData.targetModel,
+        customModel: cleanCustomModel,
         category: formData.category,
         tags: tags.length > 0 ? tags : undefined,
         associatedToolId,
@@ -348,7 +362,11 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
                 <Select
                   required
                   value={formData.targetModel}
-                  onValueChange={(val) => setFormData((prev) => ({ ...prev, targetModel: val }))}
+                  onValueChange={(val) => setFormData((prev) => ({
+                    ...prev,
+                    targetModel: val,
+                    customModel: val === "Other" ? prev.customModel : ""
+                  }))}
                 >
                   <SelectTrigger id="targetModel">
                     <SelectValue placeholder="Select target AI model" />
@@ -359,6 +377,22 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {formData.targetModel === "Other" && (
+                  <div className="pt-2 space-y-1.5">
+                    <Label htmlFor="customModel" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Other AI Model <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="customModel"
+                      required
+                      maxLength={100}
+                      placeholder="e.g. Claude Opus 6, GPT-6, Gemini 4..."
+                      value={formData.customModel}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, customModel: e.target.value }))}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

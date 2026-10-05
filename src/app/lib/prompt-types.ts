@@ -16,6 +16,7 @@ export interface PromptSubmission {
   // Classification Section
   targetModel: string;     // Target AI Model (synced with model)
   model: string;           // Backwards-compatible model field
+  customModel?: string;    // Optional custom AI Model name when targetModel is "Other"
   category: string;        // Primary category
   tags?: string[];         // Use Case / Tags array
   associatedToolId?: string;   // Optional linked AI tool ID

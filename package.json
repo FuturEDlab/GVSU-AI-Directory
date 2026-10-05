@@ -9,7 +9,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts",
+    "test:unit": "tsx --test tests/unit/**/*.test.ts",
+    "test:component": "tsx --test tests/component/**/*.test.ts",
+    "test:integration": "tsx --test tests/integration/**/*.test.ts",
+    "test:workflow-logic": "tsx --test tests/integration/workflow-logic.test.ts",
+    "test:performance": "tsx --test tests/performance/**/*.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.28.0",
@@ -58,6 +67,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^20",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",

@@ -34,3 +34,9 @@ yarn-error.log*
 # TypeScript build info
 *.tsbuildinfo
 next-env.d.ts
+
+# Local & Generated Artifacts
+/test-results/
+.vscode/
+project.zip
+temp.html

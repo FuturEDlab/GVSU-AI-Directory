@@ -14,7 +14,7 @@ export function PromptCard({ prompt, onClick }: PromptCardProps) {
   const [copied, setCopied] = useState(false);
 
   const title = prompt.title || prompt.promptName;
-  const model = prompt.targetModel || prompt.model;
+  const model = (prompt.targetModel === "Other" && prompt.customModel) ? prompt.customModel : (prompt.targetModel || prompt.model);
   const authorDisplay = prompt.authorName || prompt.submittedByEmail?.split("@")[0] || "Community";
   const promptTemplateText = prompt.promptTemplate || prompt.promptText;
 
