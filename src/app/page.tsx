@@ -16,20 +16,37 @@ import {
   collection, 
   query, 
   where,
-  limit
+  limit,
+  setDoc,
+  doc,
+  serverTimestamp
 } from "firebase/firestore";
 import { ToolSubmission, TOOL_CATEGORIES } from "@/app/lib/tool-types";
+import { INITIAL_SEED_TOOLS } from "@/app/lib/seed-tools";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Filter, LayoutGrid, Activity } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Search, ArrowRight, Filter, LayoutGrid, Activity, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSearch } from "@/lib/search-context";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Home() {
   const firestore = useFirestore();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   const { searchQuery, setSearchQuery } = useSearch();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -39,10 +56,37 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSeed = async () => {
+    if (!firestore || !isAdmin || !user) return;
+    setIsSeeding(true);
+    try {
+      for (const seed of INITIAL_SEED_TOOLS) {
+        await setDoc(
+          doc(firestore, "tools_published", seed.id),
+          {
+            ...seed,
+            submitterEmail: user.email || "admin@gvsu.edu",
+            submitterId: user.uid,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            publishedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+      toast({ title: "Seeds Planted", description: "20 baseline tools added to directory." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Seeding Failed", description: "Permission denied or network error." });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const toolsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -105,6 +149,39 @@ export default function Home() {
             <Button variant="outline" className="border-slate-200 text-slate-600 font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-slate-50" onClick={() => window.open('https://www.gvsu.edu/it/ai/', '_blank')}>
               GOVERNANCE GUIDE <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isSeeding}
+                    className="border-accentPurple text-accentPurple font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-accentPurple/5"
+                  >
+                    {isSeeding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                    PRE-SEED DIRECTORY
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-gvsuBlue font-serif text-xl">
+                      Pre-Seed the LakerAI Directory?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will populate or overwrite the 20 baseline AI tool records in the published directory with default metadata and vote counts. Do you want to continue?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-gvsuBlue hover:bg-gvsuBlue/90 text-white font-bold"
+                      onClick={handleSeed}
+                    >
+                      Confirm &amp; Seed Directory
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
 
           <div className="max-w-xl mx-auto">

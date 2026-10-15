@@ -11,23 +11,22 @@ import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 export function initializeFirebase() {
   if (!getApps().length) {
-    let app: FirebaseApp;
-    try {
-      // Attempt to initialize via Firebase App Hosting environment variables
-      app = initializeApp();
-    } catch (e) {
-      app = initializeApp(firebaseConfig);
-    }
+    const app = initializeApp(firebaseConfig);
     return getSdks(app);
   }
   return getSdks(getApp());
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  const dbId =
+    firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== "(default)"
+      ? firebaseConfig.firestoreDatabaseId
+      : undefined;
+
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
+    firestore: dbId ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp),
     storage: getStorage(firebaseApp)
   };
 }

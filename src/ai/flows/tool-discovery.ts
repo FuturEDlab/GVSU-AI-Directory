@@ -55,17 +55,19 @@ export async function getPublishedToolsSafe(): Promise<SimplifiedTool[]> {
       };
     });
     
-    // Update cache
-    toolCache = {
-      data: fetchedTools,
-      timestamp: now,
-    };
-    
-    return fetchedTools;
+    if (fetchedTools.length > 0) {
+      toolCache = {
+        data: fetchedTools,
+        timestamp: now,
+      };
+      return fetchedTools;
+    }
+    throw new Error("Admin SDK returned 0 tools; falling back to REST API.");
   } catch (error) {
-    console.warn("Firestore Admin failed, attempting REST API fallback for local dev...");
+    console.warn("Firestore Admin failed or empty, attempting REST API fallback...");
     try {
-      const url = 'https://firestore.googleapis.com/v1/projects/studio-3913196954-d2b0d/databases/(default)/documents/tools_published';
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-3913196954-d2b0d';
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/tools_published`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.documents) {
