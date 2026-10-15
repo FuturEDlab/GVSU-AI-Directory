@@ -4,21 +4,87 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as cheerio from 'cheerio';
 
+function isPrivateOrReservedHost(hostname: string): boolean {
+  const lower = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (
+    lower === 'localhost' ||
+    lower === '0.0.0.0' ||
+    lower === '::1' ||
+    lower === '0:0:0:0:0:0:0:1' ||
+    lower.endsWith('.localhost') ||
+    lower.endsWith('.local') ||
+    lower.endsWith('.internal') ||
+    lower === 'metadata.google.internal'
+  ) {
+    return true;
+  }
+
+  const ipv4Match = lower.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127)
+    ) {
+      return true;
+    }
+  }
+
+  if (
+    lower.startsWith('fc') ||
+    lower.startsWith('fd') ||
+    lower.startsWith('fe80:') ||
+    lower.startsWith('::ffff:127.') ||
+    lower.startsWith('::ffff:10.') ||
+    lower.startsWith('::ffff:192.168.') ||
+    lower.startsWith('::ffff:169.254.')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 const ImageDiscoveryInput = z.object({
-  url: z.string().url(),
+  url: z.string().url().max(2048),
 });
 
 /**
  * Server action to scrape official og:image or twitter:image.
- * Reuses the logic from automatedVettingAgent for consistency.
+ * Reuses the SSRF and protocol validation logic from automatedVettingAgent for consistency.
  */
 export async function findOfficialImage(input: z.infer<typeof ImageDiscoveryInput>) {
   try {
-    const response = await fetch(input.url, { 
+    const parsedInput = ImageDiscoveryInput.parse(input);
+    const parsed = new URL(parsedInput.url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { success: false, url: null, error: 'Unsupported URL protocol.' };
+    }
+    if (isPrivateOrReservedHost(parsed.hostname)) {
+      return { success: false, url: null, error: 'Private or reserved hosts are not allowed.' };
+    }
+
+    const response = await fetch(parsed.toString(), { 
       signal: AbortSignal.timeout(5000),
+      redirect: 'follow',
       headers: { 'User-Agent': 'Mozilla/5.0 (LakerAI Academic Auditor)' }
     });
     if (!response.ok) return { success: false, url: null, error: 'Failed to fetch url' };
+
+    if (response.url) {
+      const finalParsed = new URL(response.url);
+      if (
+        (finalParsed.protocol !== 'http:' && finalParsed.protocol !== 'https:') ||
+        isPrivateOrReservedHost(finalParsed.hostname)
+      ) {
+        return { success: false, url: null, error: 'Redirected to disallowed host.' };
+      }
+    }
     
     const html = await response.text();
     const $ = cheerio.load(html);
@@ -27,7 +93,7 @@ export async function findOfficialImage(input: z.infer<typeof ImageDiscoveryInpu
                      $('link[rel="apple-touch-icon"]').attr('href');
     
     if (imageUrl && !imageUrl.startsWith('http')) {
-      const baseUrl = new URL(input.url);
+      const baseUrl = new URL(parsed.toString());
       return { success: true, url: `${baseUrl.protocol}//${baseUrl.host}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`, error: null };
     }
     
@@ -42,9 +108,9 @@ export async function findOfficialImage(input: z.infer<typeof ImageDiscoveryInpu
 }
 
 const ImageGenerationInput = z.object({
-  toolTitle: z.string(),
-  toolCategory: z.string(),
-  toolDescription: z.string(),
+  toolTitle: z.string().trim().min(1).max(100),
+  toolCategory: z.string().trim().min(1).max(100),
+  toolDescription: z.string().trim().max(2000),
 });
 
 const generateSvgPrompt = ai.definePrompt({

@@ -3,6 +3,14 @@
 import { ai } from '@/ai/genkit';
 
 export async function askSupportAssistant(question: string, chatHistory: { role: 'user' | 'model', content: string }[]) {
+  const trimmedQuestion = (question || '').trim();
+  if (!trimmedQuestion) {
+    return "Please enter a question so I can assist you.";
+  }
+  if (trimmedQuestion.length > 1000) {
+    return "Your question is too long. Please limit your question to 1,000 characters.";
+  }
+
   try {
     const knowledgeBaseContext = `
 GVSU LakerAI Directory Help Center Context:
@@ -15,9 +23,10 @@ GVSU LakerAI Directory Help Center Context:
 7. **Theme Options**: Lakers can set theme preferences to Light, Dark, or System Default in the Settings page.
 `;
 
-    // Map history to prompt format
-    const historyPrompt = chatHistory
-      .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+    // Map bounded history to prompt format
+    const historyPrompt = (chatHistory || [])
+      .slice(-10)
+      .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${(msg.content || '').substring(0, 500)}`)
       .join('\n');
 
     const prompt = `You are LakerAI Support Assistant, a friendly, helpful GVSU virtual assistant. You help GVSU users learn how to use LakerAI, search/filter tools, recommend new tools, report inaccuracies, check feedback status, and resolve issues. Use the provided help center context to answer user questions accurately. Keep your answers concise, formatted in markdown, and tailored to GVSU terminology.
@@ -27,7 +36,7 @@ ${knowledgeBaseContext}
 Chat History:
 ${historyPrompt}
 
-User: ${question}
+User: ${trimmedQuestion}
 Assistant:`;
 
     const response = await ai.generate({ prompt });

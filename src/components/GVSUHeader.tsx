@@ -12,12 +12,19 @@ import { useRouter, usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export function GVSUHeader() {
+interface GVSUHeaderProps {
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+}
+
+export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVSUHeaderProps = {}) {
   const { user, loading: authLoading, signIn, logOut, isAdmin } = useAuth();
-  const { searchQuery, setSearchQuery } = useSearch();
+  const { searchQuery: contextSearchQuery, setSearchQuery } = useSearch();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  const activeSearchQuery = propSearchQuery !== undefined ? propSearchQuery : contextSearchQuery;
 
   useEffect(() => {
     setMounted(true);
@@ -25,8 +32,18 @@ export function GVSUHeader() {
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
+    onSearchChange?.(val);
     if (pathname !== "/") {
-      router.push("/");
+      const target = val.trim() ? `/?q=${encodeURIComponent(val.trim())}` : "/";
+      router.push(target);
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pathname !== "/") {
+      const target = activeSearchQuery.trim() ? `/?q=${encodeURIComponent(activeSearchQuery.trim())}` : "/";
+      router.push(target);
     }
   };
 
@@ -69,6 +86,9 @@ export function GVSUHeader() {
           </Link>
           <Link href="/prompt-library" className="hover:text-slate-200 transition-colors flex items-center gap-1 font-bold text-yellow-300">
             <Sparkles className="w-3 h-3 text-yellow-300" /> PROMPT LIBRARY
+          </Link>
+          <Link href="/help" className="hover:text-slate-200 transition-colors hidden sm:inline">
+            HELP & SUPPORT
           </Link>
           {user && isAdmin && (
             <Link href="/admin-portal" className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20 flex items-center gap-1">
@@ -137,20 +157,21 @@ export function GVSUHeader() {
           </Link>
         </div>
 
-        <div className="relative w-full max-w-[360px] hidden md:block">
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-[360px] hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input 
             placeholder="Search AI tools..." 
+            aria-label="Search tools in header"
             className="pl-9 pr-9 bg-slate-50 border-slate-200 h-10 focus-visible:ring-gvsuBlue rounded-lg text-sm"
-            value={searchQuery}
+            value={activeSearchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gvsuBlue">
+          {activeSearchQuery && (
+            <button type="button" onClick={() => handleSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gvsuBlue" aria-label="Clear search">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
+        </form>
 
         <div className="flex items-center gap-4">
           {authLoading ? (

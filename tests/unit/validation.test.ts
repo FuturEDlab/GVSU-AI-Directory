@@ -1,5 +1,6 @@
 import { test, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { TOOL_CATEGORIES } from '../../src/app/lib/tool-types';
 
 describe('Validation & Anti-Hallucination Safety Suite', () => {
   it('rejects empty inputs and inputs exceeding 500 characters', () => {
@@ -48,4 +49,12 @@ describe('Validation & Anti-Hallucination Safety Suite', () => {
     assert.ok(filtered.length <= 5, 'Must hard cap recommendations at 5');
     assert.ok(filtered.every(r => r.matchPercentage > 50 && r.matchPercentage <= 100));
   });
+
+  it('includes Research Assistant and Other in canonical TOOL_CATEGORIES', () => {
+    assert.ok(TOOL_CATEGORIES.includes('Research Assistant'));
+    assert.ok(TOOL_CATEGORIES.includes('Other'));
+    assert.ok(TOOL_CATEGORIES.includes('Writing Assistants'));
+  });
 });
+
+

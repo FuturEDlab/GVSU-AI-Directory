@@ -18,7 +18,7 @@ import {
   where,
   limit
 } from "firebase/firestore";
-import { ToolSubmission } from "@/app/lib/tool-types";
+import { ToolSubmission, TOOL_CATEGORIES } from "@/app/lib/tool-types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, ArrowRight, Filter, LayoutGrid, Activity } from "lucide-react";
@@ -31,7 +31,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 export default function Home() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   const [activeCategory, setActiveCategory] = useState("ALL TOOLS");
@@ -55,17 +55,26 @@ export default function Home() {
 
   const { data: allTools, isLoading } = useCollection<ToolSubmission>(toolsQuery);
 
-  const categories = [
-    "ALL TOOLS", "WRITING", "VIDEO", "IMAGE GEN", "DESIGN", "DEVELOPMENT", "CHAT/LLM", "PRODUCTIVITY"
-  ];
+  const categories = ["ALL TOOLS", ...TOOL_CATEGORIES];
 
   const filteredTools = useMemo(() => {
     if (!allTools) return [];
     const queryLower = debouncedSearchQuery.toLowerCase();
     return allTools
       .filter(tool => {
-        const matchesCategory = activeCategory === "ALL TOOLS" || tool.category.toUpperCase().includes(activeCategory.toUpperCase());
-        const matchesSearch = !debouncedSearchQuery || tool.title.toLowerCase().includes(queryLower) || tool.pedagogicalNarrative?.toLowerCase().includes(queryLower);
+        const toolCat = (tool.category || "").toUpperCase();
+        const activeCat = activeCategory.toUpperCase();
+        const matchesCategory =
+          activeCategory === "ALL TOOLS" ||
+          toolCat === activeCat ||
+          toolCat.includes(activeCat) ||
+          (toolCat.length > 0 && activeCat.includes(toolCat));
+        const matchesSearch =
+          !debouncedSearchQuery ||
+          tool.title?.toLowerCase().includes(queryLower) ||
+          tool.initialDescription?.toLowerCase().includes(queryLower) ||
+          tool.pedagogicalNarrative?.toLowerCase().includes(queryLower) ||
+          tool.category?.toLowerCase().includes(queryLower);
         const toolTagList = tool.tags ? Object.values(tool.tags).flat() : [];
         const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => toolTagList.includes(tag));
         return matchesCategory && matchesSearch && matchesTags;
@@ -77,7 +86,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
-      <GVSUHeader />
+      <GVSUHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
       
       <section className="pt-20 pb-16 px-4">
         <div className="container mx-auto max-w-5xl hero-glass-container p-12 md:p-16 text-center border-slate-200">

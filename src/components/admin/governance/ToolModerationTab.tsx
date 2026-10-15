@@ -62,7 +62,7 @@ interface ToolModerationTabProps {
 }
 
 export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProps) {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const gov = useGovernanceHub();
@@ -154,7 +154,8 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
       const result = await automatedVettingAgent({
         toolTitle: draftTitle,
         toolDescription: activeTool.initialDescription,
-        toolUrl: draftUrl
+        toolUrl: draftUrl,
+        adminEmail: user?.email || undefined,
       });
 
       setDraftNarrative(result.pedagogicalNarrative);

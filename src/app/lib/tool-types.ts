@@ -24,6 +24,19 @@ export const TOOL_STAGES: ToolStatus[] = [
 
 export type ToolHealth = "Healthy" | "At Risk";
 
+export const TOOL_CATEGORIES = [
+  "Writing Assistants",
+  "Image Generation",
+  "Data Analysis",
+  "Research Assistant",
+  "Coding Assistant",
+  "Video/Audio",
+  "Education",
+  "Other"
+] as const;
+
+export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
+
 export interface ToolTags {
   security_privacy: string[];
   ethics_stewardship: string[];

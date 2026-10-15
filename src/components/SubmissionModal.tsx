@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle, Loader2, Info } from "lucide-react";
-import { ToolStatus, ToolTags } from "@/app/lib/tool-types";
+import { ToolStatus, ToolTags, TOOL_CATEGORIES } from "@/app/lib/tool-types";
 
 export function SubmissionModal() {
   const { user, signIn } = useAuth();
@@ -152,7 +152,7 @@ export function SubmissionModal() {
               <Select name="category" required>
                 <SelectTrigger className="rounded-xl border-slate-200 h-11"><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  {["Writing", "Image Generation", "Coding", "Video/Audio", "Research", "Other"].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  {TOOL_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
