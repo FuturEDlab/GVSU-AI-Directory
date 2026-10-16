@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { AIDisclaimer } from "./AIDisclaimer";
+import Link from "next/link";
 
 interface ToolCardProps {
   tool: ToolSubmission;
@@ -108,12 +109,14 @@ export function ToolCard({ tool }: ToolCardProps) {
 
   if (!mounted) return <div className="aspect-video bg-white border border-slate-100 rounded-xl animate-pulse" />;
 
+  const imageSrc = tool.ogImageUrl || (tool as any).imageUrl || (tool.id ? `/logos/${tool.id}.svg` : undefined);
+
   return (
     <Card className="glass-card flex flex-col h-full rounded-2xl overflow-hidden group">
-      <div className="relative aspect-video w-full flex items-center justify-center bg-slate-50 overflow-hidden border-b border-slate-50">
-        {tool.ogImageUrl && !imageError ? (
+      <Link href={`/tools/${tool.id}`} className="relative aspect-video w-full flex items-center justify-center bg-slate-50 overflow-hidden border-b border-slate-50 block">
+        {imageSrc && !imageError ? (
           <img 
-            src={tool.ogImageUrl} 
+            src={imageSrc} 
             alt={tool.title} 
             loading="lazy"
             decoding="async"
@@ -132,13 +135,15 @@ export function ToolCard({ tool }: ToolCardProps) {
             <ShieldCheck className="w-3.5 h-3.5" /> Vetted
           </Badge>
         </div>
-      </div>
+      </Link>
 
       <CardContent className="p-6 flex-1 flex flex-col">
         <div className="mb-3">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{tool.category}</span>
           <div className="flex items-center gap-2 mt-0.5">
-            <h3 className="text-lg font-bold font-sans text-slate-900">{tool.title}</h3>
+            <Link href={`/tools/${tool.id}`} className="hover:text-gvsuBlue transition-colors">
+              <h3 className="text-lg font-bold font-sans text-slate-900 hover:text-gvsuBlue transition-colors">{tool.title}</h3>
+            </Link>
             {tool.isVerified && <BadgeCheck className="w-4 h-4 text-gvsuBlue" />}
           </div>
         </div>
@@ -203,10 +208,17 @@ export function ToolCard({ tool }: ToolCardProps) {
         )}
       </CardContent>
 
-      <CardFooter className="p-0 border-t border-slate-50">
+      <CardFooter className="p-0 border-t border-slate-50 grid grid-cols-2 divide-x divide-slate-100">
+        <Link 
+          href={`/tools/${tool.id}`} 
+          className="w-full flex items-center justify-center gap-2 py-3.5 text-[10px] font-bold text-slate-600 hover:text-gvsuBlue hover:bg-slate-50 transition-all tracking-widest uppercase"
+        >
+          VIEW DETAILS
+        </Link>
         <a 
           href={tool.toolUrl} 
           target="_blank" 
+          rel="noopener noreferrer"
           className="w-full flex items-center justify-center gap-2 py-3.5 text-[10px] font-bold text-gvsuBlue hover:bg-slate-50 transition-all tracking-widest uppercase"
         >
           ACCESS TOOL <ExternalLink className="w-3.5 h-3.5" />

@@ -42,7 +42,20 @@ Assistant:`;
     const response = await ai.generate({ prompt });
     return response.text || "I'm sorry, I couldn't process that question. Can you try again?";
   } catch (error) {
-    console.error("AI Assistant error:", error);
-    return "The AI assistant is currently offline. Please try again later or browse the Knowledge Base articles.";
+    console.warn("AI Support Assistant falling back to Knowledge Base:", error);
+    const q = trimmedQuestion.toLowerCase();
+    if (q.includes("submit") || q.includes("recommend") || q.includes("add")) {
+      return "**Submitting a Tool to LakerAI Directory**\n\nLakers can recommend new AI tools using the **Submit New Tool** button on the Discovery Hub or from **My Tools** (`/dashboard`). Make sure you are signed in with a verified `@gvsu.edu` or `@mail.gvsu.edu` account. Submissions enter the Governance review queue before publication.";
+    }
+    if (q.includes("report") || q.includes("mistake") || q.includes("error") || q.includes("broken")) {
+      return "**Reporting a Mistake or Inaccuracy**\n\nYou can flag outdated links, grading inaccuracies, or privacy concerns by clicking **Report a Mistake** in the top navigation bar or **Report Inaccuracy** inside any tool's Alignment Report Card.";
+    }
+    if (q.includes("ferpa") || q.includes("privacy") || q.includes("security") || q.includes("risk")) {
+      return "**GVSU Compliance & Risk Grades**\n\nEvery tool in the LakerAI Directory is evaluated across **Security & Privacy**, **Pedagogical Value**, **Ethics & Stewardship**, and **Access & Cost** (scored 1–5). Use the **Audit Filters** (`FERPA Compliant`, `PII Safe`, `IP Protected`, `Laker Green`) on the Discovery Hub to filter tools by institutional compliance.";
+    }
+    if (q.includes("prompt")) {
+      return "**Community Prompt Library**\n\nVisit the **Prompt Library** (`/prompt-library`) to browse, filter, and copy vetted academic prompts for ChatGPT, Claude, Gemini, Perplexity, and GitHub Copilot, or submit your own prompt templates for faculty review.";
+    }
+    return "**GVSU LakerAI Support Assistant**\n\nHere is how to get the most out of the LakerAI Directory:\n- **Search & Filter Tools**: Use the Discovery Hub search bar, category pills, or Audit Filters (`FERPA Compliant`, `PII Safe`).\n- **Recommend a Tool**: Click **Submit New Tool** on the homepage while signed in with your `@gvsu.edu` account.\n- **Report an Issue**: Click **Report a Mistake** in the header or use the **Community Feedback** tab to log feature requests and bug reports.";
   }
 }

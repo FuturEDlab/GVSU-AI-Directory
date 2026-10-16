@@ -22,7 +22,7 @@ const DiscoveryOutputSchema = z.object({
 
 export type DiscoveryOutput = z.infer<typeof DiscoveryOutputSchema>;
 
-import { SimplifiedTool, retrieveCandidates } from '@/ai/utils/tool-retrieval';
+import { SimplifiedTool, retrieveCandidates, scoreTool, normalizeTokens } from '@/ai/utils/tool-retrieval';
 
 // ---------------------------------------------------------
 // 2. SERVER-SIDE CACHING
@@ -183,34 +183,54 @@ export async function discoverTools(
       `ID: ${t.id} | Name: ${t.name} | Category: ${t.category} | Description: ${t.description} | Tags: ${t.tags || 'none'}`
     ).join('\n---\n');
 
-    // 5. Call Gemini
-    const { output } = await toolDiscoveryPrompt({
-      question,
-      chatHistory: historyPrompt,
-      toolsString
-    });
+    // 5. Call Gemini (with deterministic retrieval fallback if API key is unavailable)
+    try {
+      const { output } = await toolDiscoveryPrompt({
+        question,
+        chatHistory: historyPrompt,
+        toolsString
+      });
 
-    if (!output) {
-      throw new Error("Failed to generate recommendations.");
+      if (output) {
+        const validCandidateIds = new Set(candidates.map(c => c.id));
+        const filteredRecs = (output.recommendations || [])
+          .filter(rec => validCandidateIds.has(rec.toolId))
+          .filter(rec => typeof rec.matchPercentage === 'number' && rec.matchPercentage > 50 && rec.matchPercentage <= 100)
+          .sort((a, b) => b.matchPercentage - a.matchPercentage)
+          .slice(0, 5);
+
+        return {
+          intent: output.intent || question,
+          clarifyingQuestion: output.clarifyingQuestion,
+          recommendations: filteredRecs,
+        };
+      }
+    } catch (geminiErr) {
+      console.warn("Gemini reranking unavailable; using deterministic candidate scoring fallback:", geminiErr);
     }
 
-    // 6. Post-generation Validation & Safety (Anti-Hallucination)
-    const validCandidateIds = new Set(candidates.map(c => c.id));
-
-    let filteredRecs = (output.recommendations || [])
-      // Discard hallucinated IDs
-      .filter(rec => validCandidateIds.has(rec.toolId))
-      // Enforce percentage bounds
-      .filter(rec => typeof rec.matchPercentage === 'number' && rec.matchPercentage > 50 && rec.matchPercentage <= 100)
-      // Sort descending
+    const queryTokens = normalizeTokens(question);
+    const scoredFallback = candidates
+      .map((t, idx) => {
+        const rawScore = scoreTool(t, queryTokens);
+        const matchPercentage = rawScore > 0
+          ? Math.min(96, 74 + rawScore * 3)
+          : Math.max(62, 82 - idx * 5);
+        return {
+          toolId: t.id,
+          toolName: t.name,
+          matchPercentage,
+          whyThisMatches: `${t.category} — ${t.description || 'Vetted institutional AI tool matching your query.'}`,
+          rawScore,
+        };
+      })
       .sort((a, b) => b.matchPercentage - a.matchPercentage)
-      // Hard cap at 5
-      .slice(0, 5);
+      .slice(0, 4)
+      .map(({ rawScore: _, ...rec }) => rec);
 
     return {
-      intent: output.intent || "",
-      clarifyingQuestion: output.clarifyingQuestion,
-      recommendations: filteredRecs,
+      intent: question,
+      recommendations: scoredFallback,
     };
   } catch (error) {
     console.error("AI Discovery error:", error);

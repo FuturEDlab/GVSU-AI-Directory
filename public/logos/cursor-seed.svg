@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="bg-cursor-seed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090A0F" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <radialGradient id="glow-cursor-seed" cx="80%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#93C5FD" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#bg-cursor-seed)" />
+  <rect width="800" height="450" fill="url(#glow-cursor-seed)" />
+  <g opacity="0.1" stroke="#FFFFFF" stroke-width="1">
+    <line x1="0" y1="90" x2="800" y2="90" />
+    <line x1="0" y1="180" x2="800" y2="180" />
+    <line x1="0" y1="270" x2="800" y2="270" />
+    <line x1="0" y1="360" x2="800" y2="360" />
+    <line x1="160" y1="0" x2="160" y2="450" />
+    <line x1="320" y1="0" x2="320" y2="450" />
+    <line x1="480" y1="0" x2="480" y2="450" />
+    <line x1="640" y1="0" x2="640" y2="450" />
+  </g>
+  <rect x="56" y="52" width="108" height="108" rx="26" fill="#FFFFFF" fill-opacity="0.15" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="2" />
+  <text x="110" y="124" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" letter-spacing="1">CR</text>
+  <rect x="572" y="56" width="172" height="36" rx="18" fill="#0032A0" fill-opacity="0.9" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="1.5" />
+  <text x="658" y="79" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="800" letter-spacing="1.8">GVSU AI VETTED</text>
+  <text x="56" y="252" fill="#93C5FD" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="800" letter-spacing="2.5">CODING ASSISTANT</text>
+  <text x="56" y="314" fill="#FFFFFF" font-family="Georgia, serif" font-size="50" font-weight="900">Cursor</text>
+  <text x="56" y="358" fill="#E2E8F0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="500" opacity="0.9">Anysphere • LakerAI Institutional Directory</text>
+</svg>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase/hooks";
 import { collection, query, where } from "firebase/firestore";
 import { PromptSubmission } from "@/app/lib/prompt-types";
@@ -25,12 +25,15 @@ export function ToolCommunityPrompts({ toolId, toolTitle }: ToolCommunityPrompts
     if (!firestore || !toolId) return null;
     return query(
       collection(firestore, "promptLibrary"),
-      where("associatedToolId", "==", toolId),
       where("status", "==", "APPROVED")
     );
   }, [firestore, toolId]);
 
-  const { data: prompts, isLoading } = useCollection<PromptSubmission>(promptsQuery);
+  const { data: allApprovedPrompts, isLoading } = useCollection<PromptSubmission>(promptsQuery);
+  const prompts = useMemo(
+    () => (allApprovedPrompts || []).filter((p) => p.associatedToolId === toolId),
+    [allApprovedPrompts, toolId]
+  );
 
   return (
     <div className="mt-12 space-y-6 pt-8 border-t border-slate-200 dark:border-slate-800">
