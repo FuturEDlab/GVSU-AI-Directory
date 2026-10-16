@@ -33,9 +33,11 @@ import { cn } from "@/lib/utils";
 interface ReportModalProps {
   triggerClassName?: string;
   fullWidthMobile?: boolean;
+  /** "onDark" (default) for the GVSU Blue utility bar; "onLight" for white/amber surfaces. */
+  variant?: "onDark" | "onLight";
 }
 
-export function ReportModal({ triggerClassName, fullWidthMobile }: ReportModalProps = {}) {
+export function ReportModal({ triggerClassName, fullWidthMobile, variant = "onDark" }: ReportModalProps = {}) {
   const { user } = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
@@ -108,11 +110,14 @@ export function ReportModal({ triggerClassName, fullWidthMobile }: ReportModalPr
           <button
             type="button"
             className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold tracking-wider uppercase transition-colors whitespace-nowrap",
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold tracking-wider uppercase transition-colors whitespace-nowrap",
+              variant === "onLight"
+                ? "h-8 px-3 rounded-lg bg-white hover:bg-slate-50 text-gvsuBlue border border-gvsuBlue/40 hover:border-gvsuBlue shadow-xs"
+                : "bg-white/10 hover:bg-white/20 text-white border border-white/20",
               triggerClassName
             )}
           >
-            <Flag className="w-3 h-3 text-archway" />
+            <Flag className={cn("w-3 h-3", variant === "onLight" ? "text-gvsuBlue" : "text-archway")} />
             <span>Report a Mistake</span>
           </button>
         )}

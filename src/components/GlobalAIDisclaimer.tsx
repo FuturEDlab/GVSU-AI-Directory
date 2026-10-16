@@ -44,7 +44,7 @@ export function GlobalAIDisclaimer() {
         </div>
         
         <div className="flex items-center justify-center gap-2 shrink-0">
-          <ReportModal />
+          <ReportModal variant="onLight" />
           <Button 
             onClick={handleDismiss}
             className="bg-[#0032A0] text-white hover:bg-[#002270] font-bold px-3 py-1.5 h-8 rounded-lg text-xs transition-all shadow-sm"
