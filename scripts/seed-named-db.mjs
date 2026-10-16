@@ -883,6 +883,169 @@ function buildToolSvg(t) {
 </svg>`;
 }
 
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 (LakerAI Academic Auditor)';
+
+function isPrivateOrReservedHost(hostname) {
+  const lower = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (
+    lower === 'localhost' ||
+    lower === '0.0.0.0' ||
+    lower === '::1' ||
+    lower === '0:0:0:0:0:0:0:1' ||
+    lower.endsWith('.localhost') ||
+    lower.endsWith('.local') ||
+    lower.endsWith('.internal') ||
+    lower === 'metadata.google.internal'
+  ) {
+    return true;
+  }
+  const ipv4Match = lower.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127)
+    ) {
+      return true;
+    }
+  }
+  if (
+    lower.startsWith('fc') ||
+    lower.startsWith('fd') ||
+    lower.startsWith('fe80:') ||
+    lower.startsWith('::ffff:127.') ||
+    lower.startsWith('::ffff:10.') ||
+    lower.startsWith('::ffff:192.168.') ||
+    lower.startsWith('::ffff:169.254.')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function extractMetaImagesFromHtml(html) {
+  const candidates = [];
+  const patterns = [
+    /<meta[^>]+property=["']og:image(?::secure_url|:url)?["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::secure_url|:url)?["']/gi,
+    /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)["']/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image(?::src)?["']/gi,
+    /<link[^>]+rel=["']apple-touch-icon["'][^>]+href=["']([^"']+)["']/gi,
+  ];
+  for (const regex of patterns) {
+    let m;
+    while ((m = regex.exec(html)) !== null) {
+      if (m[1] && m[1].trim()) {
+        candidates.push(m[1].trim().replace(/&amp;/g, '&'));
+      }
+    }
+  }
+  return candidates;
+}
+
+async function verifyReachableImageUrl(candidateUrl) {
+  try {
+    const imgParsed = new URL(candidateUrl);
+    if (imgParsed.protocol !== 'http:' && imgParsed.protocol !== 'https:') return null;
+    if (isPrivateOrReservedHost(imgParsed.hostname)) return null;
+
+    const imgRes = await fetch(imgParsed.toString(), {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000),
+      redirect: 'follow',
+      headers: {
+        'User-Agent': BROWSER_USER_AGENT,
+        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      },
+    });
+    if (!imgRes.ok) return null;
+
+    if (imgRes.url) {
+      const finalImgParsed = new URL(imgRes.url);
+      if (
+        (finalImgParsed.protocol !== 'http:' && finalImgParsed.protocol !== 'https:') ||
+        isPrivateOrReservedHost(finalImgParsed.hostname)
+      ) {
+        return null;
+      }
+    }
+
+    const contentType = (imgRes.headers.get('content-type') || '').toLowerCase();
+    if (!contentType.startsWith('image/')) return null;
+
+    return { url: imgRes.url || imgParsed.toString(), contentType };
+  } catch {
+    return null;
+  }
+}
+
+async function discoverOfficialImage(toolUrl) {
+  try {
+    const parsed = new URL(toolUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return { success: false, url: null, reason: 'Unsupported URL protocol' };
+    }
+    if (isPrivateOrReservedHost(parsed.hostname)) {
+      return { success: false, url: null, reason: 'Disallowed private/reserved host' };
+    }
+
+    const res = await fetch(parsed.toString(), {
+      signal: AbortSignal.timeout(6000),
+      redirect: 'follow',
+      headers: {
+        'User-Agent': BROWSER_USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    });
+    if (!res.ok) {
+      return { success: false, url: null, reason: `Vendor returned HTTP ${res.status}` };
+    }
+
+    const finalPageUrl = res.url || parsed.toString();
+    const finalParsed = new URL(finalPageUrl);
+    if (
+      (finalParsed.protocol !== 'http:' && finalParsed.protocol !== 'https:') ||
+      isPrivateOrReservedHost(finalParsed.hostname)
+    ) {
+      return { success: false, url: null, reason: 'Redirected to disallowed host' };
+    }
+
+    const html = await res.text();
+    const rawCandidates = extractMetaImagesFromHtml(html);
+    if (rawCandidates.length === 0) {
+      return { success: false, url: null, reason: 'No og:image / twitter:image meta tag in HTML' };
+    }
+
+    for (const raw of rawCandidates) {
+      let resolved;
+      try {
+        resolved = new URL(raw, finalPageUrl).toString();
+      } catch {
+        continue;
+      }
+      const verified = await verifyReachableImageUrl(resolved);
+      if (verified) {
+        return {
+          success: true,
+          url: verified.url,
+          contentType: verified.contentType,
+          reason: `Verified HTTP 200 (${verified.contentType})`,
+        };
+      }
+    }
+
+    return { success: false, url: null, reason: 'Candidate meta image failed HTTP 200 image/* verification' };
+  } catch (err) {
+    return { success: false, url: null, reason: err.message || 'Fetch timeout / network error' };
+  }
+}
+
 function generateBrandLogos() {
   const logosDir = path.join(process.cwd(), 'public', 'logos');
   fs.mkdirSync(logosDir, { recursive: true });
@@ -890,10 +1053,11 @@ function generateBrandLogos() {
   for (const t of INITIAL_SEED_TOOLS) {
     const svg = buildToolSvg(t);
     fs.writeFileSync(path.join(logosDir, `${t.id}.svg`), svg, 'utf8');
-    t.ogImageUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    t.imageUrl = `/logos/${t.id}.svg`;
+    t.svgDataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    t.ogImageUrl = t.svgDataUri;
+    t.imageUrl = t.svgDataUri;
   }
-  console.log(`✔ Generated ${INITIAL_SEED_TOOLS.length} SVG brand logos in public/logos/ and encoded inline SVG previews`);
+  console.log(`✔ Generated ${INITIAL_SEED_TOOLS.length} SVG brand logos in public/logos/ and encoded inline SVG fallbacks`);
 }
 
 function getFirebaseToolsAccessToken() {
@@ -934,7 +1098,8 @@ function toFirestoreDocumentFields(tool, nowIso) {
     pedagogicalNarrative: { stringValue: tool.pedagogicalNarrative },
     toolUrl: { stringValue: tool.toolUrl },
     ogImageUrl: { stringValue: tool.ogImageUrl },
-    imageUrl: { stringValue: tool.imageUrl || tool.ogImageUrl },
+    imageUrl: { stringValue: tool.imageUrl || tool.svgDataUri },
+    imageSource: { stringValue: tool.imageSource || 'svg-fallback' },
     status: { stringValue: tool.status },
     health: { stringValue: tool.health },
     submitterDisplayName: { stringValue: tool.submitterDisplayName },
@@ -1032,14 +1197,30 @@ async function main() {
   const { token, email } = getFirebaseToolsAccessToken();
   console.log(`Using firebase-tools token for: ${email}`);
   console.log(`Target Project : ${PROJECT_ID}`);
-  console.log(`Target Database: ${DATABASE_ID}`);
+  console.log(`Target Database: ${DATABASE_ID}\n`);
 
   const baseUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents`;
   const nowIso = new Date().toISOString();
   const nowMs = Date.now();
 
   let successCount = 0;
+  let liveOgCount = 0;
+  let svgFallbackCount = 0;
+
   for (const tool of INITIAL_SEED_TOOLS) {
+    const discovery = await discoverOfficialImage(tool.toolUrl);
+    if (discovery.success && discovery.url) {
+      tool.ogImageUrl = discovery.url;
+      tool.imageUrl = tool.svgDataUri; // Secondary fallback if browser blocks hotlink
+      tool.imageSource = 'live-og';
+      liveOgCount++;
+    } else {
+      tool.ogImageUrl = tool.svgDataUri;
+      tool.imageUrl = `/logos/${tool.id}.svg`;
+      tool.imageSource = 'svg-fallback';
+      svgFallbackCount++;
+    }
+
     const docUrl = `${baseUrl}/tools_published/${encodeURIComponent(tool.id)}`;
     const res = await fetch(docUrl, {
       method: 'PATCH',
@@ -1057,8 +1238,12 @@ async function main() {
       throw new Error(`Failed to write ${tool.id} (HTTP ${res.status}): ${errText}`);
     }
     successCount++;
-    console.log(`  ✔ [${successCount}/${INITIAL_SEED_TOOLS.length}] Seeded ${tool.id} (${tool.title}) -> ${tool.ogImageUrl}`);
+    const tag = tool.imageSource === 'live-og' ? '🌐 LIVE OG:IMAGE' : '🎨 SVG FALLBACK';
+    const detail = tool.imageSource === 'live-og' ? tool.ogImageUrl : `${discovery.reason} -> /logos/${tool.id}.svg`;
+    console.log(`  ✔ [${successCount}/${INITIAL_SEED_TOOLS.length}] ${tag} | ${tool.title.padEnd(20)} | ${detail}`);
   }
+
+  console.log(`\n📊 Image Discovery Summary: ${liveOgCount} Live Vendor og:image URLs | ${svgFallbackCount} Branded SVG Fallbacks`);
 
   for (const prompt of INITIAL_SEED_PROMPTS) {
     const docUrl = `${baseUrl}/promptLibrary/${encodeURIComponent(prompt.id)}`;
@@ -1074,8 +1259,6 @@ async function main() {
     });
     if (!res.ok) {
       console.warn(`Failed to seed prompt ${prompt.id}: ${await res.text()}`);
-    } else {
-      console.log(`  ✔ Seeded community prompt: ${prompt.id} (${prompt.title})`);
     }
   }
 
@@ -1091,7 +1274,7 @@ async function main() {
   const verifyData = await verifyRes.json();
   const docs = verifyData.documents || [];
   const withImages = docs.filter((d) => d.fields?.ogImageUrl?.stringValue).length;
-  console.log(`\n✔ Verification GET succeeded! Total documents in tools_published: ${docs.length} (${withImages}/20 with ogImageUrl)`);
+  console.log(`✔ Verification GET succeeded! Total documents in tools_published: ${docs.length} (${withImages}/20 with ogImageUrl)`);
 }
 
 main().catch((err) => {

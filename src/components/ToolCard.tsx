@@ -30,6 +30,7 @@ export function ToolCard({ tool }: ToolCardProps) {
   const [newComment, setNewComment] = useState("");
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [fallbackError, setFallbackError] = useState(false);
   const [userVote, setUserVote] = useState<'like' | 'dislike' | null>(null);
 
   useEffect(() => {
@@ -109,19 +110,26 @@ export function ToolCard({ tool }: ToolCardProps) {
 
   if (!mounted) return <div className="aspect-video bg-white border border-slate-100 rounded-xl animate-pulse" />;
 
-  const imageSrc = tool.ogImageUrl || (tool as any).imageUrl || (tool.id ? `/logos/${tool.id}.svg` : undefined);
+  const fallbackLogoSrc = (tool as any).imageUrl || (tool.id ? `/logos/${tool.id}.svg` : undefined);
+  const imageSrc = !imageError
+    ? (tool.ogImageUrl || fallbackLogoSrc)
+    : (!fallbackError ? fallbackLogoSrc : undefined);
 
   return (
     <Card className="glass-card flex flex-col h-full rounded-2xl overflow-hidden group">
       <Link href={`/tools/${tool.id}`} className="relative aspect-video w-full flex items-center justify-center bg-slate-50 overflow-hidden border-b border-slate-50 block">
-        {imageSrc && !imageError ? (
+        {imageSrc ? (
           <img 
             src={imageSrc} 
             alt={tool.title} 
             loading="lazy"
             decoding="async"
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-            onError={() => setImageError(true)} 
+            onError={() => {
+              if (!imageError) setImageError(true);
+              else setFallbackError(true);
+            }} 
           />
         ) : (
           <div className="w-full h-full bg-gvsuBlue flex flex-col items-center justify-center text-white">

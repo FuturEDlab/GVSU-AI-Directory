@@ -73,6 +73,7 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
   const [isVetting, setIsVetting] = useState(false);
   const [isSearchingImage, setIsSearchingImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isBulkSyncing, setIsBulkSyncing] = useState(false);
   const [discoveredImage, setDiscoveredImage] = useState<{ url: string; source: 'official' | 'generated' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -339,13 +340,68 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
     }
   };
 
+  const handleBulkSyncImages = async () => {
+    if (!firestore) return;
+    const targetList = moderationTab === "live" ? liveTools : pendingTools;
+    if (targetList.length === 0) return;
+
+    setIsBulkSyncing(true);
+    const targetCollection = moderationTab === "live" ? "tools_published" : "tools_submitted";
+    let scrapedCount = 0;
+    let fallbackCount = 0;
+
+    try {
+      const { findOfficialImage, generateProfessionalImage } = await import("@/ai/flows/admin-image-management");
+      for (const tool of targetList) {
+        if (!tool.id || !tool.toolUrl) continue;
+        const found = await findOfficialImage({ url: tool.toolUrl });
+        if (found.success && found.url) {
+          await setDoc(doc(firestore, targetCollection, tool.id), { ogImageUrl: found.url, updatedAt: new Date() }, { merge: true });
+          scrapedCount++;
+        } else if (!tool.ogImageUrl) {
+          const gen = await generateProfessionalImage({
+            toolTitle: tool.title,
+            toolCategory: tool.category,
+            toolDescription: tool.initialDescription || "",
+          });
+          if (gen.success && gen.url) {
+            await setDoc(doc(firestore, targetCollection, tool.id), { ogImageUrl: gen.url, updatedAt: new Date() }, { merge: true });
+            fallbackCount++;
+          }
+        }
+      }
+      toast({
+        title: "Bulk Image Sync Complete",
+        description: `Updated ${scrapedCount} tools with live official images (${fallbackCount} generated SVG fallbacks).`,
+      });
+    } catch (err) {
+      console.error("Bulk image sync failed:", err);
+      toast({ variant: "destructive", title: "Bulk Sync Error", description: "Failed to complete bulk image discovery." });
+    } finally {
+      setIsBulkSyncing(false);
+    }
+  };
+
   const avatarInitial = draftTitle.trim().charAt(0).toUpperCase() || "?";
   const reportCard = activeTool?.reportCard as ReportCard | undefined;
   const isToolsLoading = submittedLoading || publishedLoading;
 
   return (
     <div className="flex-1 flex gap-8 min-h-0">
-      <aside className="w-[380px] flex flex-col gap-6 shrink-0">
+      <aside className="w-[380px] flex flex-col gap-4 shrink-0">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Directory Queue</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkSyncImages}
+            disabled={isBulkSyncing || isToolsLoading}
+            className="h-8 text-[9px] font-bold tracking-widest uppercase border-gvsuBlue/30 text-gvsuBlue hover:bg-gvsuBlue hover:text-white rounded-lg"
+          >
+            {isBulkSyncing ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Search className="w-3 h-3 mr-1.5" />}
+            Bulk Sync Official Images
+          </Button>
+        </div>
         <Tabs value={moderationTab} onValueChange={setModerationTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="bg-slate-200/50 p-1 flex h-12 rounded-xl border border-slate-200 shrink-0">
             <TabsTrigger value="pending" className="flex-1 rounded-lg data-[state=active]:bg-white font-bold text-[10px] uppercase tracking-wider">

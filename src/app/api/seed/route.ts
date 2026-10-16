@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { INITIAL_SEED_TOOLS } from '@/app/lib/seed-tools';
 import { FieldValue } from 'firebase-admin/firestore';
+import { findOfficialImage } from '@/ai/flows/admin-image-management';
 
 const DATABASE_ID =
   process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID ||
@@ -12,14 +13,30 @@ async function ensureSeeded(force = false) {
   const existingSnap = await colRef.where('status', '==', 'Published').get();
 
   let seededNow = false;
+  const imageDiscoveryReport: Array<{ id: string; title: string; source: 'live-og' | 'svg-fallback'; url: string }> = [];
+
   if (force || existingSnap.size < INITIAL_SEED_TOOLS.length) {
     const batch = adminDb.batch();
     for (const seed of INITIAL_SEED_TOOLS) {
       const docRef = colRef.doc(seed.id);
+      const discovery = await findOfficialImage({ url: seed.toolUrl });
+      const resolvedOgImageUrl = discovery.success && discovery.url ? discovery.url : seed.ogImageUrl;
+      const source = discovery.success && discovery.url ? 'live-og' : 'svg-fallback';
+
+      imageDiscoveryReport.push({
+        id: seed.id,
+        title: seed.title,
+        source,
+        url: resolvedOgImageUrl,
+      });
+
       batch.set(
         docRef,
         {
           ...seed,
+          ogImageUrl: resolvedOgImageUrl,
+          imageUrl: seed.imageUrl || `/logos/${seed.id}.svg`,
+          imageSource: source,
           submitterEmail: 'vanharkj@mail.gvsu.edu',
           submitterId: 'admin-seed',
           createdAt: FieldValue.serverTimestamp(),
@@ -50,6 +67,7 @@ async function ensureSeeded(force = false) {
     databaseId: DATABASE_ID,
     seededNow,
     count: tools.length,
+    imageDiscoveryReport,
     tools,
   };
 }
