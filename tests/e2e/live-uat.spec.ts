@@ -106,7 +106,7 @@ test.describe('Full Real-Browser User Acceptance Test (UAT) Suite', () => {
   test('3. LakerAI Assistant & Automated AI Workflows + NewsGrid', async ({ page }) => {
     await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
 
-    const assistantInput = page.locator('input[placeholder="Ask LakerAI anything..."]');
+    const assistantInput = page.getByPlaceholder("Need help finding a tool? Tell LakerAI what you're looking for...");
     await expect(assistantInput).toBeVisible({ timeout: 20000 });
     await assistantInput.fill('literature review and citations');
     await page.getByRole('button', { name: /^Ask$/i }).click();

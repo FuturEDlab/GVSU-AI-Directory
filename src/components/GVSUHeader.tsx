@@ -74,14 +74,14 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
 
   if (!mounted) {
     return (
-      <header className="w-full flex flex-col bg-midnight border-b border-midnight">
+      <header className="w-full flex flex-col bg-white border-b border-slate-200">
         <div className="bg-gvsuBlue h-9 w-full" />
         <div className="h-[68px] w-full flex items-center px-4 sm:px-8 lg:px-12 justify-between max-w-[1440px] mx-auto">
           <div className="flex flex-col">
-            <span className="text-white font-sans text-lg sm:text-xl font-bold tracking-tight uppercase leading-none">
+            <span className="text-gvsuBlue font-sans text-lg sm:text-xl font-bold tracking-tight uppercase leading-none">
               GRAND VALLEY STATE UNIVERSITY
             </span>
-            <span className="text-linkBlue font-sans text-xs font-semibold tracking-wider uppercase mt-0.5">
+            <span className="text-slate-600 font-sans text-xs font-semibold tracking-wider uppercase mt-0.5">
               LakerAI Directory
             </span>
           </div>
@@ -91,7 +91,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
   }
 
   return (
-    <header className="w-full flex flex-col z-50 sticky top-0 bg-midnight text-white border-b border-white/10 shadow-sm">
+    <header className="w-full flex flex-col z-50 sticky top-0 bg-white/95 backdrop-blur-md text-slate-900 border-b border-slate-200 shadow-xs">
       {/* Top Institutional Utility Bar (GVSU Blue #0032A0) */}
       <div className="bg-gvsuBlue text-white text-[11px] font-semibold py-1.5 px-4 sm:px-8 lg:px-12 font-sans tracking-wider border-b border-white/10">
         <div className="max-w-[1440px] mx-auto flex justify-between items-center gap-4">
@@ -177,7 +177,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
         </div>
       </div>
 
-      {/* Main Institutional Lockup & Search Bar (Unified Deep Institutional Navy #0A1931) */}
+      {/* Main Institutional Lockup & Search Bar (Unified Light Theme, GVSU Blue lockup) */}
       <div className="px-4 sm:px-8 lg:px-12 py-3 max-w-[1440px] w-full mx-auto flex items-center justify-between gap-3 sm:gap-6 min-h-[68px]">
         <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
           {/* Navigation Drawer Trigger */}
@@ -186,33 +186,33 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 hover:bg-white/10 shrink-0 rounded-lg text-white hover:text-linkBlue"
+                className="h-11 w-11 hover:bg-slate-100 shrink-0 rounded-lg text-gvsuBlue hover:text-gvsuBlue"
                 aria-label="Open navigation menu"
               >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0 flex flex-col bg-white border-r border-slate-200">
-              <SheetHeader className="p-5 border-b border-slate-200 bg-midnight text-white text-left">
+              <SheetHeader className="p-5 border-b border-slate-200 bg-slate-50 text-slate-900 text-left">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-linkBlue">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gvsuBlue">
                     Grand Valley State University
                   </span>
-                  <SheetTitle className="font-sans text-xl font-bold text-white tracking-tight">
+                  <SheetTitle className="font-sans text-xl font-bold text-gvsuBlue tracking-tight">
                     LakerAI Directory
                   </SheetTitle>
                 </div>
                 {user && (
-                  <div className="flex items-center gap-3 pt-3 mt-2 border-t border-white/15">
-                    <Avatar className="h-9 w-9 border border-white/30">
+                  <div className="flex items-center gap-3 pt-3 mt-2 border-t border-slate-200">
+                    <Avatar className="h-9 w-9 border border-slate-200">
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
                       <AvatarFallback className="bg-gvsuBlue text-white font-bold text-xs">
                         {user.displayName ? user.displayName.charAt(0).toUpperCase() : "L"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold text-white truncate">{user.displayName || "Laker User"}</span>
-                      <span className="text-[11px] text-slate-300 truncate">{user.email}</span>
+                      <span className="text-xs font-bold text-slate-900 truncate">{user.displayName || "Laker User"}</span>
+                      <span className="text-[11px] text-slate-600 truncate">{user.email}</span>
                     </div>
                   </div>
                 )}
@@ -379,12 +379,12 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
           {/* Official GVSU Institutional Lockup (100% Sans-Serif) */}
           <Link href="/" className="flex items-center gap-3 sm:gap-4 group focus:outline-none py-1 min-w-0">
             <div className="flex flex-col">
-              <span className="text-white font-sans text-base sm:text-xl lg:text-[21px] font-bold tracking-tight uppercase leading-none">
+              <span className="text-gvsuBlue font-sans text-base sm:text-xl lg:text-[21px] font-bold tracking-tight uppercase leading-none">
                 Grand Valley State University
               </span>
               <div className="flex items-center gap-2 mt-1">
-                <span className="h-0.5 w-4 bg-linkBlue rounded-full hidden sm:inline-block" />
-                <span className="text-linkBlue font-sans text-[10px] sm:text-xs font-bold tracking-[0.14em] uppercase leading-none">
+                <span className="h-0.5 w-4 bg-gvsuBlue rounded-full hidden sm:inline-block" />
+                <span className="text-slate-600 font-sans text-[10px] sm:text-xs font-bold tracking-[0.14em] uppercase leading-none">
                   LakerAI Directory
                 </span>
               </div>
@@ -394,11 +394,11 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
 
         {/* Desktop Search Input */}
         <form onSubmit={handleSearchSubmit} className="relative w-full max-w-[380px] hidden md:block">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
           <Input
             placeholder="Search vetted AI tools, categories, or FERPA tags..."
             aria-label="Search tools in header"
-            className="pl-10 pr-9 bg-white/10 hover:bg-white/15 focus:bg-white border-white/20 focus:border-linkBlue h-10 focus-visible:ring-2 focus-visible:ring-linkBlue rounded-lg text-sm text-white focus:text-slate-900 placeholder:text-slate-300 focus:placeholder:text-slate-500 transition-colors"
+            className="pl-10 pr-9 bg-slate-50 hover:bg-white focus:bg-white border-slate-200 focus:border-gvsuBlue h-10 focus-visible:ring-2 focus-visible:ring-gvsuBlue rounded-lg text-sm text-slate-900 placeholder:text-slate-500 transition-colors"
             value={activeSearchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
@@ -406,7 +406,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
             <button
               type="button"
               onClick={() => handleSearchChange("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-linkBlue p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-gvsuBlue p-1"
               aria-label="Clear search"
             >
               <X className="w-3.5 h-3.5" />
@@ -421,7 +421,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
             variant="ghost"
             size="icon"
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            className="md:hidden h-11 w-11 rounded-lg text-white hover:text-linkBlue hover:bg-white/10"
+            className="md:hidden h-11 w-11 rounded-lg text-gvsuBlue hover:text-gvsuBlue hover:bg-slate-100"
             aria-label="Toggle search bar"
           >
             {mobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
@@ -429,13 +429,13 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
 
           {authLoading ? (
             <div className="flex items-center justify-center px-3 h-10 min-w-[72px]">
-              <Loader2 className="w-4 h-4 animate-spin text-linkBlue" />
+              <Loader2 className="w-4 h-4 animate-spin text-gvsuBlue" />
             </div>
           ) : user ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 px-3 h-10 rounded-lg bg-gvsuBlue hover:bg-gvsuBlue/90 text-white border border-white/15 transition-colors text-xs font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-1.5 px-3 h-10 rounded-lg bg-gvsuBlue hover:bg-[#00257A] text-white transition-colors text-xs font-bold uppercase tracking-wider shadow-xs"
               >
                 <UserIcon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">My Dashboard</span>
@@ -445,7 +445,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
                 variant="ghost"
                 size="sm"
                 onClick={logOut}
-                className="hidden sm:inline-flex text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 h-10 px-3"
+                className="hidden sm:inline-flex text-xs font-bold text-slate-700 hover:text-gvsuBlue hover:bg-slate-100 h-10 px-3"
               >
                 Sign Out
               </Button>
@@ -454,7 +454,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
             <Button
               size="sm"
               onClick={signIn}
-              className="bg-gvsuBlue hover:bg-gvsuBlue/90 text-white border border-white/15 font-bold text-xs tracking-wider uppercase px-4 sm:px-5 h-10 min-h-[40px] rounded-lg shadow-xs transition-colors"
+              className="bg-gvsuBlue hover:bg-[#00257A] text-white font-bold text-xs tracking-wider uppercase px-4 sm:px-5 h-10 min-h-[40px] rounded-lg shadow-xs transition-colors"
             >
               Sign In
             </Button>
@@ -464,14 +464,14 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
 
       {/* Expandable Mobile Search Bar (375px viewport friendly) */}
       {mobileSearchOpen && (
-        <div className="md:hidden px-4 pb-3 pt-1 border-t border-white/10 bg-midnight animate-in slide-in-from-top-1 duration-150">
+        <div className="md:hidden px-4 pb-3 pt-2 border-t border-slate-200 bg-white animate-in slide-in-from-top-1 duration-150">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
             <Input
               placeholder="Search vetted AI tools..."
               aria-label="Search tools on mobile"
               autoFocus
-              className="pl-10 pr-9 bg-white border-slate-300 h-11 focus-visible:ring-2 focus-visible:ring-linkBlue rounded-lg text-sm text-slate-900"
+              className="pl-10 pr-9 bg-slate-50 border-slate-200 focus:bg-white focus:border-gvsuBlue h-11 focus-visible:ring-2 focus-visible:ring-gvsuBlue rounded-lg text-sm text-slate-900 placeholder:text-slate-500"
               value={activeSearchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
             />

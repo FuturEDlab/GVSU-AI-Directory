@@ -149,7 +149,7 @@ export function LakerAIAssistant({ rightElement }: LakerAIAssistantProps) {
           <Sparkles className="w-4 h-4" />
         </div>
         <Input 
-          placeholder="Ask LakerAI anything..." 
+          placeholder="Need help finding a tool? Tell LakerAI what you're looking for..." 
           className="bg-transparent border-none shadow-none text-base h-full focus-visible:ring-0 px-0 text-slate-900 placeholder:text-slate-400 font-sans"
           value={input}
           onChange={(e) => setInput(e.target.value)}
