@@ -79,7 +79,7 @@ export default function ChangelogPage() {
 
   if (!mounted) {
     return (
-      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-slate-950">
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC]">
         <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue dark:text-linkBlue mb-4" />
         <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Changelog...</p>
       </div>
@@ -87,7 +87,7 @@ export default function ChangelogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-200 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col transition-colors duration-200 font-sans">
       <GVSUHeader />
       <main className="flex-1 container mx-auto py-10 px-4 sm:px-8 max-w-4xl">
         <div className="mb-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 font-medium">

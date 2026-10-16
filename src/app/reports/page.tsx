@@ -78,7 +78,7 @@ export default function YourReportsPage() {
 
   if (showLoading) {
     return (
-      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-slate-950">
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC]">
         <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue dark:text-linkBlue mb-4" />
         <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading reports...</p>
       </div>
@@ -87,7 +87,7 @@ export default function YourReportsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
         <GVSUHeader />
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
           <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
@@ -112,7 +112,7 @@ export default function YourReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-200 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col transition-colors duration-200 font-sans">
       <GVSUHeader />
       <main className="flex-1 container mx-auto py-10 px-4 sm:px-8 max-w-5xl">
         <header className="mb-10 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-3">

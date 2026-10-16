@@ -1,10 +1,13 @@
 export type Theme = 'light' | 'dark' | 'system';
 
+const THEME_STORAGE_KEY = 'gvsu_theme_v2';
+
 export function applyTheme(theme: Theme) {
   if (typeof window === 'undefined') return;
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  try {
+    localStorage.removeItem('theme');
+  } catch {}
+  const isDark = theme === 'dark';
 
   if (isDark) {
     document.documentElement.classList.add('dark');
@@ -15,11 +18,17 @@ export function applyTheme(theme: Theme) {
 
 export function setTheme(theme: Theme) {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('theme', theme);
+  localStorage.removeItem('theme');
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
   applyTheme(theme);
 }
 
 export function getTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem('theme') as Theme) || 'light';
+  try {
+    localStorage.removeItem('theme');
+    return (localStorage.getItem(THEME_STORAGE_KEY) as Theme) || 'light';
+  } catch {
+    return 'light';
+  }
 }

@@ -28,7 +28,8 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{__html: `
           (function() {
             try {
-              const theme = localStorage.getItem('theme') || 'light';
+              localStorage.removeItem('theme');
+              const theme = localStorage.getItem('gvsu_theme_v2') || 'light';
               if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
               } else {
@@ -38,7 +39,7 @@ export default function RootLayout({
           })()
         `}} />
       </head>
-      <body className="font-sans antialiased bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
+      <body className="font-sans antialiased bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col transition-colors duration-200">
         <FirebaseClientProvider>
           <AuthProvider>
             <SearchProvider>

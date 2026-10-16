@@ -125,7 +125,7 @@ export default function AdminPortal() {
 
   if (!mounted || authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
         <GVSUHeader />
         <main className="flex-1 flex flex-col overflow-hidden">
           <div className="max-w-[1440px] w-full mx-auto py-8 px-4 sm:px-8 flex-1 flex flex-col overflow-hidden">
@@ -149,7 +149,7 @@ export default function AdminPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <GVSUHeader />
       <main className="flex-1 flex flex-col overflow-hidden">
         <div className="max-w-[1440px] w-full mx-auto py-6 sm:py-8 px-4 sm:px-8 flex-1 flex flex-col overflow-hidden">
