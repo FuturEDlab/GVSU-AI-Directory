@@ -1,20 +1,20 @@
-
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { GVSUHeader } from "@/components/GVSUHeader";
+import { GVSUFooter } from "@/components/GVSUFooter";
 import { SubmissionModal } from "@/components/SubmissionModal";
 import { ToolCard } from "@/components/ToolCard";
 import { LakerAIAssistant } from "@/components/LakerAIAssistant";
 import { NewsGrid } from "@/components/news/NewsGrid";
-import { 
-  useFirestore, 
-  useCollection, 
+import {
+  useFirestore,
+  useCollection,
   useMemoFirebase
 } from "@/firebase/hooks";
-import { 
-  collection, 
-  query, 
+import {
+  collection,
+  query,
   where,
   limit,
   setDoc,
@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Search, ArrowRight, Filter, LayoutGrid, Activity, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, Filter, LayoutGrid, ShieldCheck, Loader2, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,7 +50,7 @@ export default function Home() {
   const { toast } = useToast();
   const { searchQuery, setSearchQuery } = useSearch();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  
+
   const [activeCategory, setActiveCategory] = useState("ALL TOOLS");
   const [mounted, setMounted] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -91,7 +91,7 @@ export default function Home() {
         }
       }
       toast({ title: "Seeds Planted", description: "20 baseline tools added to directory." });
-    } catch (error) {
+    } catch {
       toast({ variant: "destructive", title: "Seeding Failed", description: "Permission denied or network error." });
     } finally {
       setIsSeeding(false);
@@ -152,7 +152,7 @@ export default function Home() {
     if (!effectiveTools.length) return [];
     const queryLower = debouncedSearchQuery.toLowerCase();
     return effectiveTools
-      .filter(tool => {
+      .filter((tool) => {
         const toolCat = (tool.category || "").toUpperCase();
         const activeCat = activeCategory.toUpperCase();
         const matchesCategory =
@@ -167,7 +167,9 @@ export default function Home() {
           tool.pedagogicalNarrative?.toLowerCase().includes(queryLower) ||
           tool.category?.toLowerCase().includes(queryLower);
         const toolTagList = tool.tags ? Object.values(tool.tags).flat() : [];
-        const matchesTags = selectedTags.length === 0 || selectedTags.every(tag => toolTagList.includes(tag));
+        const matchesTags =
+          selectedTags.length === 0 ||
+          selectedTags.every((tag) => toolTagList.includes(tag));
         return matchesCategory && matchesSearch && matchesTags;
       })
       .sort((a, b) => (b.publishedAt?.seconds || 0) - (a.publishedAt?.seconds || 0));
@@ -176,25 +178,60 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
       <GVSUHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-      
-      <section className="pt-20 pb-16 px-4">
-        <div className="container mx-auto max-w-5xl hero-glass-container p-12 md:p-16 text-center border-slate-200">
-          <Badge className="mb-6 bg-slate-100 text-slate-500 hover:bg-slate-100 border-none px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.1em] uppercase">
-            <Activity className="w-3 h-3 mr-2 text-gvsuBlue" /> Global Higher Ed Intelligence
+
+      {/* Compact Institutional Hero Section */}
+      <section className="pt-8 sm:pt-12 pb-8 px-4 sm:px-8">
+        <div className="max-w-[1440px] mx-auto hero-glass-container p-6 sm:p-10 md:p-12 text-center border-slate-200 dark:border-slate-800">
+          <Badge className="mb-4 bg-gvsuBlue/10 text-gvsuBlue dark:bg-linkBlue/15 dark:text-linkBlue hover:bg-gvsuBlue/15 border border-gvsuBlue/20 px-3.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase inline-flex items-center">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-gvsuBlue dark:text-linkBlue" />
+            Grand Valley State University · Academic AI Directory
           </Badge>
-          <h1 className="text-4xl md:text-7xl font-serif font-black text-[#1E293B] leading-tight mb-6 tracking-tight uppercase">
-            Institutional <br /><span className="text-gvsuBlue">AI HUB</span>
+
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-[#0F172A] dark:text-white leading-tight mb-4 tracking-tight">
+            Institutional <span className="text-gvsuBlue dark:text-linkBlue">LakerAI Hub</span>
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
-            The unofficial directory for <span className="text-slate-900 font-bold">academic vetting</span> and <span className="text-gvsuBlue font-bold">peer experimentation</span>.
+
+          <p className="text-sm sm:text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Discover, evaluate, and adopt AI tools vetted for{" "}
+            <strong className="text-[#0F172A] dark:text-white font-semibold">pedagogical value</strong>,{" "}
+            <strong className="text-gvsuBlue dark:text-linkBlue font-semibold">FERPA privacy compliance</strong>, and{" "}
+            <strong className="text-[#0F172A] dark:text-white font-semibold">institutional stewardship</strong>.
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
+          <div className="max-w-2xl mx-auto mb-8">
+            <LakerAIAssistant
+              rightElement={
+                <Button
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowFilters(!showFilters);
+                  }}
+                  aria-label="Toggle compliance filters"
+                  className={cn(
+                    "h-full px-4 sm:px-5 rounded-none border-l border-slate-200 dark:border-slate-700 text-xs font-bold tracking-wider uppercase relative z-10 min-w-[44px]",
+                    showFilters
+                      ? "text-gvsuBlue bg-gvsuBlue/10"
+                      : "text-slate-600 dark:text-slate-300 hover:text-gvsuBlue"
+                  )}
+                >
+                  <Filter className="w-4 h-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">Filters</span>
+                </Button>
+              }
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <SubmissionModal />
-            <Button variant="outline" className="border-slate-200 text-slate-600 font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-slate-50" onClick={() => window.open('https://www.gvsu.edu/it/ai/', '_blank')}>
-              GOVERNANCE GUIDE <ArrowRight className="ml-2 w-4 h-4" />
+            <Button
+              variant="outline"
+              className="border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:border-gvsuBlue hover:text-gvsuBlue transition-colors"
+              onClick={() => window.open("https://www.gvsu.edu/ai/", "_blank")}
+            >
+              GVSU AI Governance Guide <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
             {isAdmin && (
               <AlertDialog>
@@ -202,10 +239,14 @@ export default function Home() {
                   <Button
                     variant="outline"
                     disabled={isSeeding}
-                    className="border-accentPurple text-accentPurple font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-accentPurple/5"
+                    className="border-arboretum text-arboretum dark:border-linkBlue dark:text-linkBlue font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:bg-arboretum/10"
                   >
-                    {isSeeding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                    PRE-SEED DIRECTORY
+                    {isSeeding ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    Pre-Seed Directory
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -220,7 +261,7 @@ export default function Home() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      className="bg-gvsuBlue hover:bg-gvsuBlue/90 text-white font-bold"
+                      className="bg-gvsuBlue hover:bg-midnight text-white font-bold"
                       onClick={handleSeed}
                     >
                       Confirm &amp; Seed Directory
@@ -230,34 +271,21 @@ export default function Home() {
               </AlertDialog>
             )}
           </div>
-
-          <div className="max-w-xl mx-auto">
-            <LakerAIAssistant 
-              rightElement={
-                <Button 
-                  variant="ghost" 
-                  onClick={(e) => { e.stopPropagation(); setShowFilters(!showFilters); }} 
-                  className={cn("h-full px-6 rounded-none border-l border-slate-100 text-[10px] font-bold tracking-widest uppercase relative z-10", showFilters ? "text-gvsuBlue bg-slate-50" : "text-slate-400")}
-                >
-                  <Filter className="w-3.5 h-3.5" />
-                </Button>
-              }
-            />
-          </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-6 mb-12">
-        <div className="flex flex-wrap justify-center gap-2">
+      {/* Scrollable Category Filter Bar (Mobile Horizontal Scroll + Desktop Wrap) */}
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-8 mb-8">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 sm:flex-wrap sm:justify-center">
           {categories.map((cat) => (
-            <button 
-              key={cat} 
-              onClick={() => setActiveCategory(cat)} 
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
               className={cn(
-                "px-6 py-2.5 text-[10px] font-bold tracking-[0.1em] transition-all rounded-full border uppercase", 
-                activeCategory === cat 
-                  ? "bg-gvsuBlue text-white border-gvsuBlue shadow-sm" 
-                  : "bg-white text-slate-500 border-slate-200 hover:border-gvsuBlue/40 hover:text-gvsuBlue"
+                "px-4 py-2 min-h-[40px] text-xs font-bold tracking-wider transition-all rounded-lg border uppercase whitespace-nowrap shrink-0",
+                activeCategory === cat
+                  ? "bg-gvsuBlue text-white border-gvsuBlue shadow-xs"
+                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-gvsuBlue hover:text-gvsuBlue"
               )}
             >
               {cat}
@@ -266,16 +294,47 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="container mx-auto px-6 flex-1 flex flex-col md:flex-row gap-10 mb-20">
+      {/* Main Directory Grid & Compliance Filter Rail */}
+      <main className="max-w-[1440px] w-full mx-auto px-4 sm:px-8 flex-1 flex flex-col md:flex-row gap-8 mb-16">
         {showFilters && (
-          <aside className="w-full md:w-64 space-y-6 animate-in slide-in-from-left duration-300">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 sticky top-32 shadow-sm">
-              <h3 className="font-bold text-slate-900 uppercase text-[10px] tracking-widest mb-6 border-b border-slate-50 pb-3">Audit Filters</h3>
-              <div className="space-y-4">
-                {["FERPA Compliant", "PII Safe", "IP Protected", "Laker Green"].map(t => (
-                  <div key={t} className="flex items-center space-x-3 group cursor-pointer" onClick={() => setSelectedTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}>
-                    <Checkbox id={t} checked={selectedTags.includes(t)} className="border-slate-300 data-[state=checked]:bg-gvsuBlue data-[state=checked]:border-gvsuBlue" />
-                    <label className="text-xs text-slate-600 cursor-pointer font-bold uppercase tracking-tight group-hover:text-gvsuBlue transition-colors">{t}</label>
+          <aside className="w-full md:w-64 shrink-0 space-y-6 animate-in slide-in-from-left duration-200">
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 md:sticky md:top-28 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                <h2 className="font-serif font-bold text-slate-900 dark:text-white text-base">
+                  Compliance Filters
+                </h2>
+                {selectedTags.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTags([])}
+                    className="text-xs font-semibold text-gvsuBlue hover:underline inline-flex items-center gap-1"
+                  >
+                    <X className="w-3 h-3" /> Reset
+                  </button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {["FERPA Compliant", "PII Safe", "IP Protected", "Laker Green"].map((t) => (
+                  <div
+                    key={t}
+                    className="flex items-center space-x-3 group cursor-pointer min-h-[36px]"
+                    onClick={() =>
+                      setSelectedTags((prev) =>
+                        prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+                      )
+                    }
+                  >
+                    <Checkbox
+                      id={t}
+                      checked={selectedTags.includes(t)}
+                      className="border-slate-400 data-[state=checked]:bg-gvsuBlue data-[state=checked]:border-gvsuBlue"
+                    />
+                    <label
+                      htmlFor={t}
+                      className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer font-semibold group-hover:text-gvsuBlue transition-colors"
+                    >
+                      {t}
+                    </label>
                   </div>
                 ))}
               </div>
@@ -284,29 +343,57 @@ export default function Home() {
         )}
 
         <div className="flex-1">
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-80 bg-white rounded-2xl border border-slate-100 animate-pulse" />)}
+          {isLoading && effectiveTools.length === 0 ? (
+            /* Compact Card Geometry Skeletons */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between h-64 animate-pulse"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-13 h-13 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                    </div>
+                    <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                  <div className="space-y-2 my-4">
+                    <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-4/6 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                  <div className="h-9 w-full bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+                </div>
+              ))}
             </div>
           ) : filteredTools.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-slate-200">
-              <LayoutGrid className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">No matching tools in directory.</p>
+            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
+              <LayoutGrid className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white mb-1">
+                No Matching Tools Found
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md mx-auto">
+                Try clearing your active category or search filters to browse all vetted tools in the directory.
+              </p>
             </div>
           ) : (
-            <div className="space-y-12">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                {filteredTools.map((tool) => <ToolCard key={tool.id} tool={tool} />)}
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                {filteredTools.map((tool) => (
+                  <ToolCard key={tool.id} tool={tool} variant="compact" />
+                ))}
               </div>
 
               {allTools && allTools.length >= visibleCount && (
-                <div className="flex justify-center pt-6">
-                  <Button 
-                    variant="outline" 
-                    className="border-gvsuBlue text-gvsuBlue font-bold h-12 px-8 rounded-xl text-xs tracking-widest hover:bg-gvsuBlue hover:text-white transition-all shadow-sm"
-                    onClick={() => setVisibleCount(prev => prev + 24)}
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    className="border-gvsuBlue text-gvsuBlue font-bold h-11 px-8 rounded-lg text-xs tracking-wider uppercase hover:bg-gvsuBlue hover:text-white transition-all shadow-xs"
+                    onClick={() => setVisibleCount((prev) => prev + 24)}
                   >
-                    LOAD MORE TOOLS
+                    Load More Tools
                   </Button>
                 </div>
               )}
@@ -317,19 +404,7 @@ export default function Home() {
 
       <NewsGrid />
 
-      <footer className="mt-auto border-t border-slate-100 py-16 pb-24 bg-white">
-        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gvsuBlue rounded flex items-center justify-center text-white font-bold text-base">GV</div>
-            <div className="flex flex-col">
-              <span className="text-slate-900 font-serif font-bold text-lg uppercase tracking-tight">Grand Valley</span>
-              <span className="text-slate-400 text-[8px] font-bold uppercase tracking-[0.2em]">State University</span>
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">© 2024 LakerAI Hub | Unofficial Community Vetting</p>
-        </div>
-      </footer>
+      <GVSUFooter />
     </div>
   );
 }
-

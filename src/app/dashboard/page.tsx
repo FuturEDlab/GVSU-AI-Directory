@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { GVSUHeader } from "@/components/GVSUHeader";
+import { GVSUFooter } from "@/components/GVSUFooter";
 import {
   useFirestore,
   useCollection,
@@ -52,8 +53,6 @@ export default function Dashboard() {
 
   const dataLoading = toolsLoading || pubLoading;
 
-  // Merge both collections and dedupe by id in case a tool briefly exists
-  // in both tools_submitted and tools_published during a publish operation.
   const tools = useMemo(() => {
     const merged = new Map<string, ToolSubmission>();
     [...(rawTools || []), ...(rawPublished || [])].forEach((tool) => {
@@ -67,85 +66,116 @@ export default function Dashboard() {
     });
   }, [rawTools, rawPublished]);
 
-  const stats = useMemo(() => ({
-    total: tools.length,
-    published: tools.filter(t => t.status === STATUS_PUBLISHED).length,
-    pending: tools.filter(t => t.status !== STATUS_PUBLISHED).length,
-  }), [tools]);
+  const stats = useMemo(
+    () => ({
+      total: tools.length,
+      published: tools.filter((t) => t.status === STATUS_PUBLISHED).length,
+      pending: tools.filter((t) => t.status !== STATUS_PUBLISHED).length,
+    }),
+    [tools]
+  );
 
-  // Covers: still mounting, auth still resolving, or auth resolved to "no user"
-  // but we haven't yet decided to show the sign-in wall. Without this last case,
-  // the full dashboard would flash empty/zeroed-out content before the wall appears.
   const showLoadingScreen = !mounted || authLoading || (!user && !showRestricted);
 
-  if (showLoadingScreen) return (
-    <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-white">
-      <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue mb-4" />
-      <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Opening My Tools...</p>
-    </div>
-  );
+  if (showLoadingScreen) {
+    return (
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-slate-950">
+        <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue mb-4" />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Opening My Dashboard...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
         <GVSUHeader />
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
-          <div className="bg-white p-12 text-center rounded-3xl border shadow-xl max-w-md w-full">
-            <UserX className="w-16 h-16 mx-auto mb-6 text-gvsuBlue opacity-20" />
-            <h3 className="text-2xl font-serif font-black text-slate-900 uppercase">Laker Only Area</h3>
-            <p className="text-slate-500 mt-4 mb-8 font-medium">Tracking your AI submissions is for GVSU students and faculty only.</p>
-            <Button onClick={signIn} className="bg-gvsuBlue text-white font-bold w-full h-12 rounded-xl uppercase tracking-widest text-xs">SIGN IN TO VIEW</Button>
+          <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
+            <UserX className="w-14 h-14 mx-auto mb-5 text-gvsuBlue dark:text-linkBlue opacity-80" />
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F172A] dark:text-white">
+              GVSU Laker Sign-In Required
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 mt-3 mb-8 text-sm leading-relaxed">
+              Tracking your AI tool submissions and governance status is available to GVSU faculty, staff, and students.
+            </p>
+            <Button
+              onClick={signIn}
+              className="bg-gvsuBlue hover:bg-midnight text-white font-bold w-full h-11 rounded-lg uppercase tracking-wider text-xs"
+            >
+              Sign In with GVSU
+            </Button>
           </div>
         </main>
+        <GVSUFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
       <GVSUHeader />
-      <main className="flex-1 container mx-auto py-12 px-6 max-w-6xl">
-        <header className="mb-12">
-          <h2 className="text-4xl font-serif text-slate-900 font-black uppercase tracking-tight">My Tools</h2>
-          <p className="text-slate-500 mt-1 font-medium">Track your recommended AI tools for the Laker community.</p>
+      <main className="flex-1 container mx-auto py-10 px-4 sm:px-8 max-w-6xl">
+        <header className="mb-10">
+          <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-1">
+            Contributor Workspace
+          </span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+            My Dashboard
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm sm:text-base">
+            Track your recommended AI tools and governance review status for the Laker community.
+          </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-sm text-center">
-            <LayoutList className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Submitted</p>
-            <p className="text-5xl font-black text-slate-900 mt-2">{stats.total}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12">
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
+            <LayoutList className="w-8 h-8 text-gvsuBlue dark:text-linkBlue mx-auto mb-3" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Submitted</p>
+            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.total}</p>
           </div>
-          <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-sm text-center">
-            <CheckCircle2 className="w-10 h-10 text-green-500/30 mx-auto mb-4" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live on Hub</p>
-            <p className="text-5xl font-black text-slate-900 mt-2">{stats.published}</p>
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
+            <CheckCircle2 className="w-8 h-8 text-bigLake mx-auto mb-3" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Published on Hub</p>
+            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.published}</p>
           </div>
-          <div className="bg-white p-10 rounded-3xl border border-slate-100 shadow-sm text-center">
-            <Clock className="w-10 h-10 text-amber-500/30 mx-auto mb-4" />
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Review</p>
-            <p className="text-5xl font-black text-slate-900 mt-2">{stats.pending}</p>
+          <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
+            <Clock className="w-8 h-8 text-carillonBrick mx-auto mb-3" />
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">In Governance Review</p>
+            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.pending}</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Recent Activity</h3>
+          <h2 className="font-serif text-2xl font-bold text-[#0F172A] dark:text-white mb-4">
+            Recent Submission Activity
+          </h2>
           {tools.length === 0 && !dataLoading ? (
-            <div className="py-20 text-center border border-dashed rounded-3xl text-slate-400 italic text-sm">
-              You haven't recommended any tools yet.
+            <div className="py-16 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-xl text-slate-500 text-sm">
+              You haven&apos;t recommended any AI tools yet.
             </div>
           ) : (
             <div className="space-y-3">
               {tools.map((tool) => (
-                <Card key={tool.id} className="p-6 rounded-2xl border-slate-100 flex items-center justify-between shadow-sm hover:border-gvsuBlue/20 transition-all">
+                <Card
+                  key={tool.id}
+                  className="p-5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:border-gvsuBlue/40 transition-all"
+                >
                   <div>
-                    <h4 className="font-bold text-lg text-slate-900">{tool.title}</h4>
-                    <p className="text-[10px] font-bold text-gvsuBlue uppercase tracking-widest mt-1">{tool.category}</p>
+                    <h3 className="font-serif font-bold text-xl text-[#0F172A] dark:text-white">{tool.title}</h3>
+                    <p className="text-xs font-bold text-gvsuBlue dark:text-linkBlue uppercase tracking-wider mt-0.5">
+                      {tool.category}
+                    </p>
                   </div>
-                  <Badge variant="outline" className={cn(
-                    "text-[10px] font-bold uppercase py-1.5 px-6 rounded-lg",
-                    tool.status === STATUS_PUBLISHED ? "bg-green-50 text-green-600 border-green-100" : "bg-amber-50 text-amber-600 border-amber-100"
-                  )}>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs font-bold uppercase py-1 px-4 rounded-md w-fit",
+                      tool.status === STATUS_PUBLISHED
+                        ? "bg-bigLake/20 text-midnight border-bigLake/60 dark:text-bigLake"
+                        : "bg-archway/30 text-[#5C3A21] border-archway dark:text-archway"
+                    )}
+                  >
                     {tool.status}
                   </Badge>
                 </Card>
@@ -154,6 +184,7 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+      <GVSUFooter />
     </div>
   );
 }

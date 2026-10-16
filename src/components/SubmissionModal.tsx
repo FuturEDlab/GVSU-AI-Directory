@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,8 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Loader2, Info } from "lucide-react";
-import { ToolStatus, ToolTags, TOOL_CATEGORIES } from "@/app/lib/tool-types";
+import { PlusCircle, Loader2 } from "lucide-react";
+import { ToolStatus, TOOL_CATEGORIES } from "@/app/lib/tool-types";
 
 export function SubmissionModal() {
   const { user, signIn } = useAuth();
@@ -44,7 +43,7 @@ export function SubmissionModal() {
     const collections = ["tools_submitted", "tools_published"];
     for (const coll of collections) {
       const q = query(
-        collection(db, coll), 
+        collection(db, coll),
         or(where("title", "==", title.trim()), where("toolUrl", "==", url.toLowerCase().trim()))
       );
       const snap = await getDocs(q);
@@ -94,20 +93,25 @@ export function SubmissionModal() {
         upvotes: 0,
         downvotes: 0,
         isVerified: false,
-        tags: { security_privacy: [], ethics_stewardship: [], pedagogical_value: [], institutional_status: ["Community Discovery"], access_cost: [] },
+        tags: {
+          security_privacy: [],
+          ethics_stewardship: [],
+          pedagogical_value: [],
+          institutional_status: ["Community Discovery"],
+          access_cost: [],
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       await setDoc(doc(db, "tools_submitted", toolId), toolData);
-      
-      // Trigger confirmation email
+
       await setDoc(doc(collection(db, "mail"), crypto.randomUUID()), {
         to: user.email,
         message: {
           subject: "LakerAI: Tool Received",
-          html: `Hello ${user.displayName},<br><br>Thanks for your help! We've received your tool (<b>${title}</b>) and will check it soon. Look out for an email from us!`
-        }
+          html: `Hello ${user.displayName},<br><br>Thanks for your help! We've received your tool (<b>${title}</b>) and will check it soon. Look out for an email from us!`,
+        },
       });
 
       toast({
@@ -115,7 +119,7 @@ export function SubmissionModal() {
         description: "We've received your tool and will check it soon. Look out for an email from us!",
       });
       setIsOpen(false);
-    } catch (error) {
+    } catch {
       toast({ variant: "destructive", title: "Action Failed", description: "Please try again later." });
     } finally {
       setLoading(false);
@@ -127,46 +131,66 @@ export function SubmissionModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" variant="outline" className="border-gvsuBlue text-gvsuBlue font-bold h-14 px-8 rounded-xl text-xs tracking-widest hover:bg-gvsuBlue hover:text-white">
-          SUBMIT NEW TOOL <PlusCircle className="ml-2 w-4 h-4" />
+        <Button className="bg-gvsuBlue hover:bg-midnight text-white font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase shadow-xs transition-colors">
+          Submit New Tool <PlusCircle className="ml-2 w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] rounded-3xl">
+      <DialogContent className="sm:max-w-[500px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-3xl text-slate-900 font-black uppercase">Recommend AI</DialogTitle>
-          <DialogDescription className="text-slate-500 font-medium">Add a tool to the community review queue.</DialogDescription>
+          <DialogTitle className="font-serif text-2xl sm:text-3xl text-gvsuBlue dark:text-linkBlue font-bold">
+            Recommend an AI Tool
+          </DialogTitle>
+          <DialogDescription className="text-slate-600 dark:text-slate-400">
+            Submit an AI tool to the GVSU LakerAI governance &amp; peer review queue.
+          </DialogDescription>
         </DialogHeader>
         {!user ? (
           <div className="py-8 text-center space-y-4">
-             <p className="text-slate-500 text-sm">Please sign in with your GVSU account to recommend tools.</p>
-             <Button onClick={signIn} className="bg-gvsuBlue text-white font-bold px-8 h-12 rounded-xl">SIGN IN TO SUBMIT</Button>
+            <p className="text-slate-600 dark:text-slate-300 text-sm">
+              Please sign in with your GVSU account to recommend tools.
+            </p>
+            <Button onClick={signIn} className="bg-gvsuBlue hover:bg-midnight text-white font-bold px-8 h-11 rounded-lg uppercase tracking-wider text-xs">
+              Sign In to Submit
+            </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Tool Name</Label>
-              <Input id="title" name="title" placeholder="e.g. Canva" required className="rounded-xl border-slate-200 h-11" />
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Tool Name</Label>
+              <Input id="title" name="title" placeholder="e.g. NotebookLM" required className="rounded-lg border-slate-300 h-11" />
             </div>
             <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Category</Label>
               <Select name="category" required>
-                <SelectTrigger className="rounded-xl border-slate-200 h-11"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectTrigger className="rounded-lg border-slate-300 h-11">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
                 <SelectContent>
-                  {TOOL_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                  {TOOL_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Web Link</Label>
-              <Input id="url" name="url" type="url" placeholder="https://..." required className="rounded-xl border-slate-200 h-11" />
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Web Link</Label>
+              <Input id="url" name="url" type="url" placeholder="https://..." required className="rounded-lg border-slate-300 h-11" />
             </div>
             <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Brief Summary</Label>
-              <Textarea id="description" name="description" placeholder="What does this tool help Lakers do?" className="min-h-[100px] rounded-xl border-slate-200" required />
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Pedagogical or Workflow Use Case</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="How does this tool support GVSU teaching, learning, research, or productivity?"
+                className="min-h-[100px] rounded-lg border-slate-300"
+                required
+              />
             </div>
-            <DialogFooter className="pt-4">
-              <Button type="submit" disabled={loading} className="w-full bg-gvsuBlue text-white font-bold h-12 rounded-xl uppercase tracking-widest text-xs">
-                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} CONFIRM SUBMISSION
+            <DialogFooter className="pt-2">
+              <Button type="submit" disabled={loading} className="w-full bg-gvsuBlue hover:bg-midnight text-white font-bold h-11 rounded-lg uppercase tracking-wider text-xs">
+                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} Confirm Submission
               </Button>
             </DialogFooter>
           </form>

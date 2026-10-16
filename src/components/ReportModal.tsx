@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,8 +28,14 @@ import {
 import { Flag, Loader2 } from "lucide-react";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
+import { cn } from "@/lib/utils";
 
-export function ReportModal() {
+interface ReportModalProps {
+  triggerClassName?: string;
+  fullWidthMobile?: boolean;
+}
+
+export function ReportModal({ triggerClassName, fullWidthMobile }: ReportModalProps = {}) {
   const { user } = useAuth();
   const db = useFirestore();
   const { toast } = useToast();
@@ -70,7 +75,7 @@ export function ReportModal() {
         });
         setIsOpen(false);
       })
-      .catch(async (err) => {
+      .catch(async () => {
         const permissionError = new FirestorePermissionError({
           path: "reports",
           operation: 'create',
@@ -88,34 +93,52 @@ export function ReportModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="border-amber-400 text-amber-900 hover:bg-amber-100 font-bold px-3 py-1.5 h-8 rounded-lg text-xs transition-all whitespace-nowrap"
-        >
-          Report a Mistake
-        </Button>
+        {fullWidthMobile ? (
+          <button
+            type="button"
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold text-carillonBrick hover:bg-carillonBrick/10 transition-colors text-left",
+              triggerClassName
+            )}
+          >
+            <Flag className="w-4 h-4 shrink-0" />
+            <span>Report a Mistake</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[11px] font-semibold tracking-wider uppercase transition-colors whitespace-nowrap",
+              triggerClassName
+            )}
+          >
+            <Flag className="w-3 h-3 text-archway" />
+            <span>Report a Mistake</span>
+          </button>
+        )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-[460px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl text-gvsuBlue uppercase">Report Hub Error</DialogTitle>
-          <DialogDescription>
-            Flag tools with privacy concerns, broken links, or academic integrity issues.
+          <DialogTitle className="font-serif text-2xl font-bold text-gvsuBlue dark:text-linkBlue">
+            Report Directory Issue
+          </DialogTitle>
+          <DialogDescription className="text-slate-600 dark:text-slate-400">
+            Flag tools with privacy concerns, broken links, or academic integrity issues for review by the LakerAI Governance team.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="grid gap-2">
-            <Label htmlFor="toolName">App Name</Label>
-            <Input id="toolName" name="toolName" placeholder="e.g. Canva" required />
+            <Label htmlFor="toolName" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">App Name</Label>
+            <Input id="toolName" name="toolName" placeholder="e.g. Microsoft Copilot" required className="h-11 rounded-lg" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="toolUrl">Web Link (if known)</Label>
-            <Input id="toolUrl" name="toolUrl" type="url" placeholder="https://..." />
+            <Label htmlFor="toolUrl" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">Web Link (if known)</Label>
+            <Input id="toolUrl" name="toolUrl" type="url" placeholder="https://..." className="h-11 rounded-lg" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="reason">Issue Category</Label>
+            <Label htmlFor="reason" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">Issue Category</Label>
             <Select name="reason" required>
-              <SelectTrigger>
+              <SelectTrigger className="h-11 rounded-lg">
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
@@ -129,18 +152,18 @@ export function ReportModal() {
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="comments">What needs to be fixed?</Label>
+            <Label htmlFor="comments" className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">What needs to be fixed?</Label>
             <Textarea 
               id="comments" 
               name="comments" 
               placeholder="Please provide details for our governance team..." 
-              className="min-h-[100px]"
+              className="min-h-[100px] rounded-lg"
             />
           </div>
-          <DialogFooter className="pt-4">
-            <Button type="submit" disabled={loading} className="w-full bg-gvsuBlue text-white font-bold h-12 rounded-xl">
+          <DialogFooter className="pt-2">
+            <Button type="submit" disabled={loading} className="w-full bg-gvsuBlue hover:bg-midnight text-white font-bold h-11 rounded-lg uppercase tracking-wider text-xs">
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              SEND REPORT
+              Submit Governance Report
             </Button>
           </DialogFooter>
         </form>

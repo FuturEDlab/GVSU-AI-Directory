@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { GVSUHeader } from "@/components/GVSUHeader";
+import { GVSUFooter } from "@/components/GVSUFooter";
 import { useAuth } from "@/lib/auth-context";
 import { getTheme, setTheme, Theme } from "@/lib/theme";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,52 +27,73 @@ export default function SettingsPage() {
 
   if (!mounted || authLoading) {
     return (
-      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-slate-900">
-        <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue dark:text-sky-400 mb-4" />
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading Settings...</p>
+      <div className="p-8 text-center flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] dark:bg-slate-950">
+        <Loader2 className="w-8 h-8 animate-spin text-gvsuBlue dark:text-linkBlue mb-4" />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Loading Settings...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 flex flex-col">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
         <GVSUHeader />
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
-          <div className="bg-white dark:bg-slate-800 p-12 text-center rounded-3xl border dark:border-slate-700 shadow-xl max-w-md w-full">
-            <h3 className="text-2xl font-serif font-black text-slate-900 dark:text-slate-50 uppercase">Access Denied</h3>
-            <p className="text-slate-500 dark:text-slate-400 mt-4 mb-8 font-medium">Please sign in with your GVSU account to view settings.</p>
-            <button onClick={signIn} className="bg-gvsuBlue text-white font-bold w-full h-12 rounded-xl uppercase tracking-widest text-xs">SIGN IN</button>
+          <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F172A] dark:text-white">
+              GVSU Sign-In Required
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 mt-3 mb-8 text-sm">
+              Please sign in with your GVSU account to manage preferences.
+            </p>
+            <button
+              onClick={signIn}
+              className="bg-gvsuBlue hover:bg-midnight text-white font-bold w-full h-11 rounded-lg uppercase tracking-wider text-xs transition-colors"
+            >
+              Sign In
+            </button>
           </div>
         </main>
+        <GVSUFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-900 flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-200 font-sans">
       <GVSUHeader />
-      <main className="flex-1 container mx-auto py-12 px-6 max-w-3xl">
+      <main className="flex-1 container mx-auto py-10 px-4 sm:px-8 max-w-3xl">
         <header className="mb-8">
-          <h2 className="text-4xl font-serif text-slate-900 dark:text-slate-50 font-black uppercase tracking-tight">Settings</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Manage your LakerAI Directory preferences.</p>
+          <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-1">
+            Account Preferences
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+            Settings
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm sm:text-base">
+            Manage your LakerAI Directory display preferences.
+          </p>
         </header>
 
         <div className="space-y-6">
-          <Card className="rounded-2xl border dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm">
+          <Card className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             <CardHeader>
-              <CardTitle className="text-xl">Appearance</CardTitle>
+              <CardTitle className="font-serif text-2xl font-bold">Appearance</CardTitle>
               <CardDescription>
                 Customize how the LakerAI Directory looks on your device.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={currentTheme} onValueChange={handleThemeChange} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <RadioGroup
+                value={currentTheme}
+                onValueChange={handleThemeChange}
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+              >
                 <div>
                   <RadioGroupItem value="light" id="theme-light" className="peer sr-only" />
                   <Label
                     htmlFor="theme-light"
-                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-sky-500 dark:peer-data-[state=checked]:text-sky-500 cursor-pointer transition-all"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-linkBlue dark:peer-data-[state=checked]:text-linkBlue cursor-pointer transition-all"
                   >
                     <Sun className="mb-3 h-6 w-6" />
                     <span className="font-bold text-sm">Light</span>
@@ -81,7 +103,7 @@ export default function SettingsPage() {
                   <RadioGroupItem value="dark" id="theme-dark" className="peer sr-only" />
                   <Label
                     htmlFor="theme-dark"
-                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-sky-500 dark:peer-data-[state=checked]:text-sky-500 cursor-pointer transition-all"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-linkBlue dark:peer-data-[state=checked]:text-linkBlue cursor-pointer transition-all"
                   >
                     <Moon className="mb-3 h-6 w-6" />
                     <span className="font-bold text-sm">Dark</span>
@@ -91,7 +113,7 @@ export default function SettingsPage() {
                   <RadioGroupItem value="system" id="theme-system" className="peer sr-only" />
                   <Label
                     htmlFor="theme-system"
-                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-sky-500 dark:peer-data-[state=checked]:text-sky-500 cursor-pointer transition-all"
+                    className="flex flex-col items-center justify-between rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-transparent p-4 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 peer-data-[state=checked]:border-gvsuBlue peer-data-[state=checked]:text-gvsuBlue dark:peer-data-[state=checked]:border-linkBlue dark:peer-data-[state=checked]:text-linkBlue cursor-pointer transition-all"
                   >
                     <Monitor className="mb-3 h-6 w-6" />
                     <span className="font-bold text-sm">System</span>
@@ -102,6 +124,7 @@ export default function SettingsPage() {
           </Card>
         </div>
       </main>
+      <GVSUFooter />
     </div>
   );
 }

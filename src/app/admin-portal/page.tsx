@@ -17,28 +17,26 @@ import { cn } from "@/lib/utils";
 import { perfLog } from "@/lib/perf-logger";
 import { ToolSubmission } from "@/app/lib/tool-types";
 
-// Firestore hard-caps a batch write at 500 operations.
 const FIRESTORE_BATCH_LIMIT = 450;
 
-// Lazy-load heavy tab components to ensure initial JS bundle remains ultra-light
 const ToolModerationTab = dynamic(
-  () => import("@/components/admin/governance/ToolModerationTab").then(m => m.ToolModerationTab),
+  () => import("@/components/admin/governance/ToolModerationTab").then((m) => m.ToolModerationTab),
   { loading: () => <AdminTabSkeleton /> }
 );
 const UserReportsTab = dynamic(
-  () => import("@/components/admin/governance/UserReportsTab").then(m => m.UserReportsTab),
+  () => import("@/components/admin/governance/UserReportsTab").then((m) => m.UserReportsTab),
   { loading: () => <AdminTabSkeleton /> }
 );
 const AdminFeedbackTab = dynamic(
-  () => import("@/components/admin/governance/AdminFeedbackTab").then(m => m.AdminFeedbackTab),
+  () => import("@/components/admin/governance/AdminFeedbackTab").then((m) => m.AdminFeedbackTab),
   { loading: () => <AdminTabSkeleton /> }
 );
 const AdminChatModerationTab = dynamic(
-  () => import("@/components/admin/governance/AdminChatModerationTab").then(m => m.AdminChatModerationTab),
+  () => import("@/components/admin/governance/AdminChatModerationTab").then((m) => m.AdminChatModerationTab),
   { loading: () => <AdminTabSkeleton /> }
 );
 const AdminPromptModerationTab = dynamic(
-  () => import("@/components/admin/governance/AdminPromptModerationTab").then(m => m.AdminPromptModerationTab),
+  () => import("@/components/admin/governance/AdminPromptModerationTab").then((m) => m.AdminPromptModerationTab),
   { loading: () => <AdminTabSkeleton /> }
 );
 
@@ -51,7 +49,9 @@ export default function AdminPortal() {
 
   const [mounted, setMounted] = useState(false);
   const [isRefreshingNews, setIsRefreshingNews] = useState(false);
-  const [topTab, setTopTab] = useState<"moderation" | "reports" | "feedback" | "chat_moderation" | "prompt_library">("moderation");
+  const [topTab, setTopTab] = useState<
+    "moderation" | "reports" | "feedback" | "chat_moderation" | "prompt_library"
+  >("moderation");
   const [selectedToolForModerationId, setSelectedToolForModerationId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function AdminPortal() {
     for (let i = 0; i < ops.length; i += FIRESTORE_BATCH_LIMIT) {
       const chunk = ops.slice(i, i + FIRESTORE_BATCH_LIMIT);
       const batch = writeBatch(firestore);
-      chunk.forEach(op => op(batch));
+      chunk.forEach((op) => op(batch));
       await batch.commit();
     }
   };
@@ -83,23 +83,24 @@ export default function AdminPortal() {
     setIsRefreshingNews(true);
     const startRefresh = performance.now();
     try {
-      localStorage.removeItem('laker_ai_news_ts');
-      
-      // Parallel execution of news fetch and old news snapshot read
+      localStorage.removeItem("laker_ai_news_ts");
+
       const { fetchGlobalNews } = await import("@/ai/flows/fetch-global-news");
       const [articles, oldNews] = await Promise.all([
         fetchGlobalNews(),
-        getDocs(collection(firestore, 'global_news'))
+        getDocs(collection(firestore, "global_news")),
       ]);
 
       const deleteOps = oldNews.docs.map(
-        d => (batch: ReturnType<typeof writeBatch>) => batch.delete(d.ref)
+        (d) => (batch: ReturnType<typeof writeBatch>) => batch.delete(d.ref)
       );
 
-      const addOps = (articles ?? []).map(article => (batch: ReturnType<typeof writeBatch>) => {
-        const artRef = doc(collection(firestore, 'global_news'));
-        batch.set(artRef, { ...article, publishedAt: new Date().toISOString() });
-      });
+      const addOps = (articles ?? []).map(
+        (article) => (batch: ReturnType<typeof writeBatch>) => {
+          const artRef = doc(collection(firestore, "global_news"));
+          batch.set(artRef, { ...article, publishedAt: new Date().toISOString() });
+        }
+      );
 
       await commitInChunks([...deleteOps, ...addOps]);
 
@@ -107,7 +108,11 @@ export default function AdminPortal() {
       toast({ title: "Hub Refreshed", description: "Directories synchronized." });
     } catch (error) {
       console.error("Hub refresh failed:", error);
-      toast({ variant: "destructive", title: "Refresh Failed", description: "Could not sync global news. Try again shortly." });
+      toast({
+        variant: "destructive",
+        title: "Refresh Failed",
+        description: "Could not sync global news. Try again shortly.",
+      });
     } finally {
       setIsRefreshingNews(false);
     }
@@ -118,17 +123,20 @@ export default function AdminPortal() {
     setTopTab("moderation");
   };
 
-  // Immediate Shell Render with Loading fallback for Auth check
   if (!mounted || authLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
         <GVSUHeader />
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="container mx-auto py-8 px-6 flex-1 flex flex-col overflow-hidden">
+          <div className="max-w-[1440px] w-full mx-auto py-8 px-4 sm:px-8 flex-1 flex flex-col overflow-hidden">
             <header className="flex justify-between items-center mb-8 shrink-0">
               <div>
-                <h2 className="text-4xl font-serif text-slate-900 font-black uppercase tracking-tight">Governance Hub</h2>
-                <p className="text-slate-500 mt-1 font-medium text-sm">Authenticating Governance Desk...</p>
+                <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+                  Governance Hub
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
+                  Authenticating Governance Desk...
+                </p>
               </div>
             </header>
             <div className="flex-1 flex items-center justify-center">
@@ -141,75 +149,64 @@ export default function AdminPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
       <GVSUHeader />
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="container mx-auto py-8 px-6 flex-1 flex flex-col overflow-hidden">
-          <header className="flex justify-between items-center mb-8 shrink-0">
+        <div className="max-w-[1440px] w-full mx-auto py-6 sm:py-8 px-4 sm:px-8 flex-1 flex flex-col overflow-hidden">
+          <header className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6 sm:mb-8 shrink-0">
             <div>
-              <h2 className="text-4xl font-serif text-slate-900 font-black uppercase tracking-tight">Governance Hub</h2>
-              <p className="text-slate-500 mt-1 font-medium text-sm">Institutional IT Compliance Auditor.</p>
+              <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-0.5">
+                GVSU Administration &amp; Compliance
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+                Governance Hub
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 mt-0.5 text-sm">
+                Institutional IT &amp; Academic Compliance Auditor.
+              </p>
             </div>
-            <div className="flex items-center gap-4">
-              {/* Top-Level Tabs Switcher */}
-              <div className="bg-slate-200/50 p-1 flex h-11 rounded-xl border border-slate-200 shadow-sm shrink-0">
-                <button
-                  onClick={() => setTopTab("moderation")}
-                  className={cn(
-                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all",
-                    topTab === "moderation" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  Tool Moderation
-                </button>
-                <button
-                  onClick={() => setTopTab("reports")}
-                  className={cn(
-                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5",
-                    topTab === "reports" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  User Reports
-                </button>
-                <button
-                  onClick={() => setTopTab("feedback")}
-                  className={cn(
-                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5",
-                    topTab === "feedback" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  Community Feedback
-                </button>
-                <button
-                  onClick={() => setTopTab("chat_moderation")}
-                  className={cn(
-                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5",
-                    topTab === "chat_moderation" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  Chat Moderation
-                </button>
-                <button
-                  onClick={() => setTopTab("prompt_library")}
-                  className={cn(
-                    "px-5 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-1.5",
-                    topTab === "prompt_library" ? "bg-white text-gvsuBlue shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  Prompt Library
-                </button>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Responsive Scrollable Top-Level Tabs Switcher */}
+              <div className="bg-slate-200/70 dark:bg-slate-800 p-1 flex items-center h-11 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs overflow-x-auto no-scrollbar">
+                {(
+                  [
+                    { id: "moderation", label: "Tool Moderation" },
+                    { id: "reports", label: "User Reports" },
+                    { id: "feedback", label: "Community Feedback" },
+                    { id: "chat_moderation", label: "Chat Moderation" },
+                    { id: "prompt_library", label: "Prompt Library" },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setTopTab(tab.id)}
+                    className={cn(
+                      "px-3.5 sm:px-4 h-9 rounded-lg font-bold text-xs uppercase tracking-wider transition-all whitespace-nowrap shrink-0",
+                      topTab === tab.id
+                        ? "bg-gvsuBlue text-white shadow-2xs"
+                        : "text-slate-600 dark:text-slate-300 hover:text-gvsuBlue"
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
                 <CronStatusIndicator />
                 <Button
                   variant="outline"
-                  className="border-gvsuBlue text-gvsuBlue font-bold h-11 px-6 rounded-xl text-[10px] tracking-widest hover:bg-gvsuBlue hover:text-white shadow-sm"
+                  className="border-gvsuBlue text-gvsuBlue font-bold h-11 px-4 sm:px-5 rounded-lg text-xs tracking-wider uppercase hover:bg-gvsuBlue hover:text-white shadow-2xs"
                   onClick={handleRefreshAll}
                   disabled={isRefreshingNews}
                 >
-                  {isRefreshingNews ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  REFRESH HUB NOW
+                  {isRefreshingNews ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Refresh Hub
                 </Button>
               </div>
             </div>

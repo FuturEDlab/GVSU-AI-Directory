@@ -5,12 +5,30 @@ import { useAuth } from "@/lib/auth-context";
 import { useSearch } from "@/lib/search-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, LogOut, ShieldCheck, User as UserIcon, ExternalLink, X, Menu, Home, Inbox, HelpCircle, FileText, Settings, Sparkles, Loader2 } from "lucide-react";
+import {
+  Search,
+  ShieldCheck,
+  User as UserIcon,
+  ExternalLink,
+  X,
+  Menu,
+  Home,
+  Inbox,
+  HelpCircle,
+  FileText,
+  Settings,
+  Sparkles,
+  Loader2,
+  LayoutDashboard,
+  LogOut,
+  LogIn
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { ReportModal } from "./ReportModal";
 import { useRouter, usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface GVSUHeaderProps {
   searchQuery?: string;
@@ -21,6 +39,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
   const { user, loading: authLoading, signIn, logOut, isAdmin } = useAuth();
   const { searchQuery: contextSearchQuery, setSearchQuery } = useSearch();
   const [mounted, setMounted] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,152 +67,405 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
   };
 
   const utilityLinks = [
-    { label: "REQUEST INFORMATION", href: "https://services.gvsu.edu/TDClient/60/Portal/Requests/ServiceOfferingDet?ID=2369", external: true },
-    { label: "VISIT", href: "https://www.gvsu.edu/visit/", external: true },
-    { label: "APPLY", href: "https://www.gvsu.edu/apply/", external: true },
+    { label: "GVSU AI Hub", href: "https://www.gvsu.edu/ai/", external: true },
+    { label: "IT Services", href: "https://www.gvsu.edu/it/", external: true },
+    { label: "Pew FTLC", href: "https://www.gvsu.edu/ftlc/", external: true },
   ];
 
-  if (!mounted) return (
-    <header className="w-full flex flex-col bg-white">
-      <div className="bg-gvsuBlue h-9 w-full" />
-      <div className="h-[80px] w-full border-b border-slate-100 flex items-center px-12 justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gvsuBlue rounded flex items-center justify-center text-white font-bold text-xl">GV</div>
-          <span className="text-gvsuBlue font-serif text-xl font-bold uppercase tracking-tight">GRAND VALLEY STATE UNIVERSITY</span>
+  if (!mounted) {
+    return (
+      <header className="w-full flex flex-col bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+        <div className="bg-gvsuBlue h-9 w-full" />
+        <div className="h-[72px] w-full flex items-center px-4 sm:px-8 lg:px-12 justify-between max-w-[1440px] mx-auto">
+          <div className="flex flex-col">
+            <span className="text-gvsuBlue dark:text-white font-serif text-lg sm:text-xl font-bold tracking-tight uppercase leading-none">
+              GRAND VALLEY STATE UNIVERSITY
+            </span>
+            <span className="text-slate-600 dark:text-slate-400 font-sans text-xs font-semibold tracking-wider uppercase mt-0.5">
+              LakerAI Directory
+            </span>
+          </div>
         </div>
-      </div>
-    </header>
-  );
+      </header>
+    );
+  }
 
   return (
-    <header className="w-full flex flex-col z-50 sticky top-0 bg-white border-b border-slate-200">
-      <div className="bg-gvsuBlue text-white text-[9px] font-bold py-2 px-4 sm:px-12 flex justify-between items-center font-sans tracking-widest">
-        <div className="flex gap-6 items-center">
-          <div className="hidden sm:flex gap-4">
-            {utilityLinks.map((link) => (
-              <a key={link.label} href={link.href} target="_blank" className="hover:underline flex items-center gap-1">
-                {link.label} {link.external && <ExternalLink className="w-2.5 h-2.5" />}
-              </a>
-            ))}
+    <header className="w-full flex flex-col z-50 sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
+      {/* Top Institutional Utility Bar */}
+      <div className="bg-gvsuBlue text-white text-[11px] font-semibold py-1.5 px-4 sm:px-8 lg:px-12 font-sans tracking-wider">
+        <div className="max-w-[1440px] mx-auto flex justify-between items-center gap-4">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="hidden md:flex items-center gap-5">
+              {utilityLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/90 hover:text-linkBlue transition-colors flex items-center gap-1 uppercase text-[10px] font-bold tracking-wider"
+                >
+                  {link.label}
+                  {link.external && <ExternalLink className="w-2.5 h-2.5 opacity-80" />}
+                </a>
+              ))}
+            </div>
+            <div className="hidden sm:flex items-center">
+              <ReportModal />
+            </div>
           </div>
-          <div className="flex items-center gap-1 opacity-90 sm:ml-4">
-            <ReportModal />
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <Link href="/" className="hover:text-slate-200 transition-colors">
-            DISCOVERY HUB
-          </Link>
-          <Link href="/prompt-library" className="hover:text-slate-200 transition-colors flex items-center gap-1 font-bold text-yellow-300">
-            <Sparkles className="w-3 h-3 text-yellow-300" /> PROMPT LIBRARY
-          </Link>
-          <Link href="/help" className="hover:text-slate-200 transition-colors hidden sm:inline">
-            HELP & SUPPORT
-          </Link>
-          {user && isAdmin && (
-            <Link href="/admin-portal" className="bg-white/10 px-2 py-0.5 rounded hover:bg-white/20 flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" /> ADMIN PORTAL
+
+          <nav aria-label="Primary Institutional Navigation" className="flex items-center gap-4 sm:gap-6 ml-auto">
+            <Link
+              href="/"
+              className={cn(
+                "transition-colors uppercase text-[10px] sm:text-[11px] font-bold tracking-wider py-0.5",
+                pathname === "/"
+                  ? "text-white underline decoration-linkBlue decoration-2 underline-offset-4"
+                  : "text-white/90 hover:text-linkBlue"
+              )}
+            >
+              Discovery Hub
             </Link>
-          )}
+            <Link
+              href="/prompt-library"
+              className={cn(
+                "transition-colors flex items-center gap-1.5 uppercase text-[10px] sm:text-[11px] font-bold tracking-wider py-0.5",
+                pathname?.startsWith("/prompt-library")
+                  ? "text-linkBlue underline decoration-linkBlue decoration-2 underline-offset-4"
+                  : "text-linkBlue hover:text-white"
+              )}
+            >
+              <Sparkles className="w-3 h-3 shrink-0" /> Prompt Library
+            </Link>
+            <Link
+              href="/help"
+              className={cn(
+                "transition-colors hidden sm:inline uppercase text-[10px] sm:text-[11px] font-bold tracking-wider py-0.5",
+                pathname?.startsWith("/help")
+                  ? "text-white underline decoration-linkBlue decoration-2 underline-offset-4"
+                  : "text-white/90 hover:text-linkBlue"
+              )}
+            >
+              Help &amp; Support
+            </Link>
+            {user && isAdmin && (
+              <Link
+                href="/admin-portal"
+                className={cn(
+                  "bg-midnight/80 border border-linkBlue/40 px-2.5 py-0.5 rounded hover:bg-midnight flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-colors",
+                  pathname?.startsWith("/admin-portal") && "ring-1 ring-linkBlue"
+                )}
+              >
+                <ShieldCheck className="w-3 h-3 text-linkBlue" />
+                <span className="hidden sm:inline">Admin Portal</span>
+                <span className="sm:hidden">Admin</span>
+              </Link>
+            )}
+          </nav>
         </div>
       </div>
 
-      <div className="py-4 px-4 sm:px-12 flex items-center justify-between gap-8 h-[72px]">
-        <div className="flex items-center gap-4 shrink-0">
-          {user && (
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:bg-slate-100 shrink-0">
-                  <Menu className="h-6 w-6 text-gvsuBlue" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 flex flex-col bg-white">
-                <SheetHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+      {/* Main Institutional Lockup & Search Bar */}
+      <div className="px-4 sm:px-8 lg:px-12 py-3 max-w-[1440px] w-full mx-auto flex items-center justify-between gap-3 sm:gap-6 min-h-[68px]">
+        <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+          {/* Navigation Drawer Trigger (Always available on mobile & tablet, and for signed-in users on desktop) */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 rounded-lg text-gvsuBlue dark:text-linkBlue"
+                aria-label="Open navigation menu"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[340px] p-0 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+              <SheetHeader className="p-5 border-b border-slate-200 dark:border-slate-800 bg-midnight text-white text-left">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-linkBlue">
+                    Grand Valley State University
+                  </span>
+                  <SheetTitle className="font-serif text-xl font-bold text-white tracking-tight">
+                    LakerAI Directory
+                  </SheetTitle>
+                </div>
+                {user && (
+                  <div className="flex items-center gap-3 pt-3 mt-2 border-t border-white/15">
+                    <Avatar className="h-9 w-9 border border-white/30">
                       <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User"} />
-                      <AvatarFallback className="bg-gvsuBlue text-white font-bold">
-                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+                      <AvatarFallback className="bg-gvsuBlue text-white font-bold text-xs">
+                        {user.displayName ? user.displayName.charAt(0).toUpperCase() : "L"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col text-left">
-                      <SheetTitle className="text-sm font-bold text-slate-900">{user.displayName || "Laker User"}</SheetTitle>
-                      <span className="text-xs text-slate-500 truncate w-40">{user.email}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-white truncate">{user.displayName || "Laker User"}</span>
+                      <span className="text-[11px] text-slate-300 truncate">{user.email}</span>
                     </div>
                   </div>
-                </SheetHeader>
-                <div className="flex-1 overflow-y-auto py-4">
-                  <nav className="space-y-1 px-3">
-                    <Link href="/" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                      <Home className="h-4 w-4" /> Dashboard
+                )}
+              </SheetHeader>
+
+              <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+                <div>
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    Directory &amp; Resources
+                  </p>
+                  <nav className="space-y-1">
+                    <Link
+                      href="/"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname === "/"
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Home className="h-4 w-4 shrink-0" /> Discovery Hub
                     </Link>
-                    <Link href="/prompt-library" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/prompt-library' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                      <Sparkles className="h-4 w-4 text-gvsuBlue" /> Prompt Library
+                    <Link
+                      href="/prompt-library"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname?.startsWith("/prompt-library")
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Sparkles className="h-4 w-4 shrink-0 text-gvsuBlue dark:text-linkBlue" /> Prompt Library
                     </Link>
-                    <Link href="/reports" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/reports' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                      <Inbox className="h-4 w-4" /> Your Reports
+                    <Link
+                      href="/dashboard"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname === "/dashboard"
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <LayoutDashboard className="h-4 w-4 shrink-0" /> My Dashboard
                     </Link>
-                    <Link href="/help" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/help' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                      <HelpCircle className="h-4 w-4" /> Help & Support
+                    {user && (
+                      <Link
+                        href="/reports"
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                          pathname === "/reports"
+                            ? "bg-gvsuBlue text-white"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        )}
+                      >
+                        <Inbox className="h-4 w-4 shrink-0" /> Your Reports
+                      </Link>
+                    )}
+                    <Link
+                      href="/help"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname === "/help"
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <HelpCircle className="h-4 w-4 shrink-0" /> Help &amp; Support
                     </Link>
-                    <Link href="/help/changelog" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/help/changelog' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                      <FileText className="h-4 w-4" /> Changelog
+                    <Link
+                      href="/help/changelog"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname === "/help/changelog"
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <FileText className="h-4 w-4 shrink-0" /> Release Changelog
                     </Link>
+                    {user && isAdmin && (
+                      <Link
+                        href="/admin-portal"
+                        className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                          pathname?.startsWith("/admin-portal")
+                            ? "bg-gvsuBlue text-white"
+                            : "text-arboretum dark:text-linkBlue hover:bg-slate-100 dark:hover:bg-slate-800"
+                        )}
+                      >
+                        <ShieldCheck className="h-4 w-4 shrink-0" /> Admin Portal
+                      </Link>
+                    )}
                   </nav>
                 </div>
-                <div className="p-4 border-t border-slate-100">
-                  <Link href="/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${pathname === '/settings' ? 'bg-gvsuBlue/10 text-gvsuBlue font-bold' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
-                    <Settings className="h-4 w-4" /> Settings
-                  </Link>
+
+                {/* Institutional Links inside Drawer */}
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <p className="px-3 mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                    GVSU Institutional Links
+                  </p>
+                  <div className="space-y-1">
+                    {utilityLinks.map((link) => (
+                      <a
+                        key={link.label}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        <span>{link.label}</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                      </a>
+                    ))}
+                    <ReportModal fullWidthMobile />
+                  </div>
                 </div>
-              </SheetContent>
-            </Sheet>
-          )}
-          <Link href="/" className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 bg-gvsuBlue rounded flex items-center justify-center text-white font-bold text-lg">GV</div>
-            <span className="text-gvsuBlue font-serif text-lg sm:text-xl font-bold tracking-tight uppercase leading-none hidden sm:block">GRAND VALLEY STATE UNIVERSITY</span>
-            <span className="text-gvsuBlue font-serif text-lg font-bold tracking-tight uppercase leading-none sm:hidden">GVSU</span>
+              </div>
+
+              <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/60 dark:bg-slate-900">
+                {user ? (
+                  <>
+                    <Link
+                      href="/settings"
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-sm font-semibold transition-colors",
+                        pathname === "/settings"
+                          ? "bg-gvsuBlue text-white"
+                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      )}
+                    >
+                      <Settings className="h-4 w-4 shrink-0" /> Settings
+                    </Link>
+                    <Button
+                      variant="outline"
+                      onClick={logOut}
+                      className="w-full justify-start gap-3 h-11 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700"
+                    >
+                      <LogOut className="h-4 w-4" /> Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={signIn}
+                    className="w-full bg-gvsuBlue hover:bg-midnight text-white font-bold h-11 rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-2"
+                  >
+                    <LogIn className="h-4 w-4" /> Sign In with GVSU
+                  </Button>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Official GVSU Institutional Lockup (No makeshift [GV] box) */}
+          <Link href="/" className="flex items-center gap-3 sm:gap-4 group focus:outline-none py-1 min-w-0">
+            <div className="flex flex-col">
+              <span className="text-gvsuBlue dark:text-white font-serif text-base sm:text-xl lg:text-[22px] font-bold tracking-tight uppercase leading-none">
+                Grand Valley State University
+              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="h-0.5 w-4 bg-gvsuBlue dark:bg-linkBlue rounded-full hidden sm:inline-block" />
+                <span className="text-midnight dark:text-linkBlue font-sans text-[10px] sm:text-xs font-bold tracking-[0.14em] uppercase leading-none">
+                  LakerAI Directory
+                </span>
+              </div>
+            </div>
           </Link>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-[360px] hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input 
-            placeholder="Search AI tools..." 
+        {/* Desktop Search Input */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-[380px] hidden md:block">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+          <Input
+            placeholder="Search vetted AI tools, categories, or FERPA tags..."
             aria-label="Search tools in header"
-            className="pl-9 pr-9 bg-slate-50 border-slate-200 h-10 focus-visible:ring-gvsuBlue rounded-lg text-sm"
+            className="pl-10 pr-9 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 h-10 focus-visible:ring-2 focus-visible:ring-gvsuBlue rounded-lg text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500"
             value={activeSearchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
           {activeSearchQuery && (
-            <button type="button" onClick={() => handleSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gvsuBlue" aria-label="Clear search">
+            <button
+              type="button"
+              onClick={() => handleSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-gvsuBlue p-1"
+              aria-label="Clear search"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </form>
 
-        <div className="flex items-center gap-4">
+        {/* Right Controls: Mobile Search Toggle + Auth Controls */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+            className="md:hidden h-11 w-11 rounded-lg text-gvsuBlue dark:text-linkBlue hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Toggle search bar"
+          >
+            {mobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </Button>
+
           {authLoading ? (
-            <div className="flex items-center justify-center px-4 h-10 min-w-[80px]">
-              <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+            <div className="flex items-center justify-center px-3 h-10 min-w-[72px]">
+              <Loader2 className="w-4 h-4 animate-spin text-gvsuBlue" />
             </div>
           ) : user ? (
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-xs font-bold flex items-center gap-2 text-gvsuBlue hover:text-midnight transition-colors">
-                <UserIcon className="w-3.5 h-3.5" /> MY TOOLS
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 px-3 h-10 rounded-lg bg-gvsuBlue/10 dark:bg-slate-800 text-gvsuBlue dark:text-linkBlue hover:bg-gvsuBlue hover:text-white transition-colors text-xs font-bold uppercase tracking-wider"
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">My Dashboard</span>
+                <span className="sm:hidden">Tools</span>
               </Link>
-              <Button variant="ghost" size="sm" onClick={logOut} className="text-[10px] font-bold text-slate-500 hover:text-gvsuBlue">
-                EXIT
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logOut}
+                className="hidden sm:inline-flex text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-gvsuBlue h-10 px-3"
+              >
+                Sign Out
               </Button>
             </div>
           ) : (
-            <Button size="sm" onClick={signIn} className="bg-gvsuBlue hover:bg-midnight text-white font-bold text-[10px] tracking-widest px-6 h-10 rounded-lg">
-              SIGN IN
+            <Button
+              size="sm"
+              onClick={signIn}
+              className="bg-gvsuBlue hover:bg-midnight text-white font-bold text-xs tracking-wider uppercase px-4 sm:px-5 h-10 min-h-[40px] rounded-lg shadow-xs transition-colors"
+            >
+              Sign In
             </Button>
           )}
         </div>
       </div>
+
+      {/* Expandable Mobile Search Bar (375px viewport friendly) */}
+      {mobileSearchOpen && (
+        <div className="md:hidden px-4 pb-3 pt-1 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 animate-in slide-in-from-top-1 duration-150">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Input
+              placeholder="Search vetted AI tools..."
+              aria-label="Search tools on mobile"
+              autoFocus
+              className="pl-10 pr-9 bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 h-11 focus-visible:ring-2 focus-visible:ring-gvsuBlue rounded-lg text-sm"
+              value={activeSearchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+            {activeSearchQuery && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-gvsuBlue p-1.5"
+                aria-label="Clear mobile search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </form>
+        </div>
+      )}
     </header>
   );
 }
