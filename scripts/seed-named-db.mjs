@@ -1,5 +1,6 @@
-import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gvsu-ai-directory';
 const DATABASE_ID =
@@ -329,43 +330,94 @@ export const INITIAL_SEED_TOOLS = [
   }
 ];
 
-async function main() {
-  console.log(`Target Project : ${PROJECT_ID}`);
-  console.log(`Target Database: ${DATABASE_ID}`);
-  console.log(`Total Tools    : ${INITIAL_SEED_TOOLS.length}`);
+function getFirebaseToolsAccessToken() {
+  const configPath = path.join(os.homedir(), '.config', 'configstore', 'firebase-tools.json');
+  const raw = fs.readFileSync(configPath, 'utf8');
+  const cfg = JSON.parse(raw);
 
-  try {
-    if (!getApps().length) {
-      initializeApp({
-        credential: applicationDefault(),
-        projectId: PROJECT_ID,
-      });
-    }
-
-    const db = getFirestore(DATABASE_ID);
-    const batch = db.batch();
-    for (const seed of INITIAL_SEED_TOOLS) {
-      const ref = db.collection('tools_published').doc(seed.id);
-      batch.set(
-        ref,
-        {
-          ...seed,
-          createdAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp(),
-          publishedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
-    }
-    await batch.commit();
-
-    const snap = await db.collection('tools_published').where('status', '==', 'Published').get();
-    console.log(`\n✔ Direct Admin SDK seed succeeded! Verified ${snap.size} published tools in ${DATABASE_ID}.`);
-    return;
-  } catch (err) {
-    console.warn(`Local Admin SDK lacks direct IAM access (${err.code || err.message}).`);
-    console.log('Note: On Firebase App Hosting, /api/seed runs under the gvsu-ai-directory Cloud Run service account and seeds the named database automatically.');
+  // Check active/default tokens first, then additionalAccounts if needed
+  if (cfg.tokens?.access_token) {
+    return { token: cfg.tokens.access_token, email: cfg.user?.email || 'unknown' };
   }
+  if (Array.isArray(cfg.additionalAccounts)) {
+    const gvsuAcct = cfg.additionalAccounts.find((a) =>
+      a.user?.email?.toLowerCase().includes('gvsu.edu')
+    );
+    if (gvsuAcct?.tokens?.access_token) {
+      return { token: gvsuAcct.tokens.access_token, email: gvsuAcct.user.email };
+    }
+  }
+  throw new Error('No access_token found in ~/.config/configstore/firebase-tools.json');
 }
 
-main();
+function toFirestoreDocumentFields(tool, nowIso) {
+  return {
+    id: { stringValue: tool.id },
+    title: { stringValue: tool.title },
+    category: { stringValue: tool.category },
+    initialDescription: { stringValue: tool.initialDescription },
+    pedagogicalNarrative: { stringValue: tool.pedagogicalNarrative },
+    toolUrl: { stringValue: tool.toolUrl },
+    status: { stringValue: tool.status },
+    health: { stringValue: tool.health },
+    submitterDisplayName: { stringValue: tool.submitterDisplayName },
+    submitterEmail: { stringValue: tool.submitterEmail },
+    submitterId: { stringValue: tool.submitterId },
+    upvotes: { integerValue: String(tool.upvotes) },
+    downvotes: { integerValue: String(tool.downvotes) },
+    isVerified: { booleanValue: Boolean(tool.isVerified) },
+    createdAt: { timestampValue: nowIso },
+    updatedAt: { timestampValue: nowIso },
+    publishedAt: { timestampValue: nowIso },
+  };
+}
+
+async function main() {
+  const { token, email } = getFirebaseToolsAccessToken();
+  console.log(`Using firebase-tools token for: ${email}`);
+  console.log(`Target Project : ${PROJECT_ID}`);
+  console.log(`Target Database: ${DATABASE_ID}`);
+
+  const baseUrl = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/${DATABASE_ID}/documents`;
+  const nowIso = new Date().toISOString();
+
+  let successCount = 0;
+  for (const tool of INITIAL_SEED_TOOLS) {
+    const docUrl = `${baseUrl}/tools_published/${encodeURIComponent(tool.id)}`;
+    const res = await fetch(docUrl, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        fields: toFirestoreDocumentFields(tool, nowIso),
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Failed to write ${tool.id} (HTTP ${res.status}): ${errText}`);
+    }
+    successCount++;
+    console.log(`  ✔ [${successCount}/${INITIAL_SEED_TOOLS.length}] Seeded ${tool.id} (${tool.title})`);
+  }
+
+  // Verify via GET query
+  const verifyRes = await fetch(`${baseUrl}/tools_published?pageSize=50`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!verifyRes.ok) {
+    throw new Error(`Verification GET failed with status ${verifyRes.status}: ${await verifyRes.text()}`);
+  }
+  const verifyData = await verifyRes.json();
+  const docs = verifyData.documents || [];
+  console.log(`\n✔ Verification GET succeeded! Total documents in tools_published: ${docs.length}`);
+}
+
+main().catch((err) => {
+  console.error('Seed error:', err);
+  process.exit(1);
+});

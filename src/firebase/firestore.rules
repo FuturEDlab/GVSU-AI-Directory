@@ -42,8 +42,8 @@ service cloud.firestore {
       return isAuthenticated() &&
         request.auth.token.email is string &&
         request.auth.token.email_verified == true &&
-        (request.auth.token.email.lower().endsWith("@gvsu.edu") ||
-         request.auth.token.email.lower().endsWith("@mail.gvsu.edu"));
+        (request.auth.token.email.lower().matches('^.*@gvsu\\.edu$') ||
+         request.auth.token.email.lower().matches('^.*@mail\\.gvsu\\.edu$'));
     }
 
     function isOwner(userId) {

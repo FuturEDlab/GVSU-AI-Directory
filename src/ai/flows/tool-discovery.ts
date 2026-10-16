@@ -68,7 +68,8 @@ export async function getPublishedToolsSafe(): Promise<SimplifiedTool[]> {
     try {
       const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gvsu-ai-directory';
       const dbId = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID || 'ai-studio-gvsulakeraidirec-b9840b1c-2365-40d8-a6ec-8d6b200bdbfb';
-      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/tools_published`;
+      const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAsGfF8zdXJVl3jwDq3fUDtUFlPBxlb9oU';
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/tools_published?key=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.documents) {
