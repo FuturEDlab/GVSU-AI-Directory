@@ -11,7 +11,7 @@ export function GVSUFooter() {
           {/* Institutional Lockup */}
           <div className="md:col-span-5 space-y-3">
             <div className="flex flex-col">
-              <span className="font-serif font-bold text-xl sm:text-2xl tracking-tight uppercase text-white">
+              <span className="font-sans font-bold text-xl sm:text-2xl tracking-tight uppercase text-white">
                 Grand Valley State University
               </span>
               <span className="text-linkBlue text-xs font-bold uppercase tracking-[0.16em] mt-1">
@@ -25,13 +25,18 @@ export function GVSUFooter() {
 
           {/* Directory Navigation */}
           <div className="md:col-span-3 space-y-2.5">
-            <h3 className="font-serif text-base font-bold text-archway tracking-wide">
+            <h3 className="font-sans text-sm uppercase font-bold text-archway tracking-wider">
               Directory Navigation
             </h3>
             <ul className="space-y-2 text-sm text-slate-300">
               <li>
                 <Link href="/" className="hover:text-linkBlue transition-colors">
                   Discovery Hub
+                </Link>
+              </li>
+              <li>
+                <Link href="/governance" className="hover:text-linkBlue transition-colors font-semibold text-white">
+                  Governance &amp; 4-Pillar Guide
                 </Link>
               </li>
               <li>
@@ -59,10 +64,15 @@ export function GVSUFooter() {
 
           {/* GVSU Institutional Resources */}
           <div className="md:col-span-4 space-y-2.5">
-            <h3 className="font-serif text-base font-bold text-archway tracking-wide">
+            <h3 className="font-sans text-sm uppercase font-bold text-archway tracking-wider">
               University AI &amp; Governance Resources
             </h3>
             <ul className="space-y-2 text-sm text-slate-300">
+              <li>
+                <Link href="/governance#tag-glossary" className="hover:text-linkBlue transition-colors">
+                  Compliance Tag Glossary
+                </Link>
+              </li>
               <li>
                 <a
                   href="https://www.gvsu.edu/ai/"

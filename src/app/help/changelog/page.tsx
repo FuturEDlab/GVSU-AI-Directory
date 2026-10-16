@@ -44,8 +44,9 @@ export default function ChangelogPage() {
             title: "GVSU Institutional Brand & UI/UX Overhaul",
             releaseDate: new Date(),
             highlights: [
-              "Aligned typography and color tokens with official GVSU Identity Standards (EB Garamond & Open Sans)",
-              "Redesigned high-density Academic Directory Cards with 4-Pillar Alignment Scorecards and Risk Rating badges",
+              "Aligned typography and color tokens with official GVSU Identity Standards (100% Open Sans sans-serif & unified GVSU Blue palette)",
+              "Launched dedicated GVSU AI Governance & 4-Pillar Grading Guide (/governance) with interactive Tag Glossary and hover tooltips",
+              "Redesigned high-density Academic Directory Cards with 4-Pillar Alignment Scorecards, Risk Rating badges, and expandable tag chips",
               "Updated institutional header with faculty links (GVSU AI Hub, IT Services, Pew FTLC) and mobile drawer",
               "Removed redundant bottom news ticker for a cleaner mobile and desktop reading experience",
             ],
@@ -98,7 +99,7 @@ export default function ChangelogPage() {
         </div>
 
         <header className="mb-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight flex items-center gap-3">
             <FileText className="w-8 h-8 text-gvsuBlue dark:text-linkBlue shrink-0" />
             Release Changelog
           </h1>
@@ -136,7 +137,7 @@ export default function ChangelogPage() {
                     </time>
                   </div>
 
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white mb-4">
+                  <h2 className="font-sans text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white mb-4">
                     {release.title}
                   </h2>
 

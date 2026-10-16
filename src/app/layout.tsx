@@ -24,12 +24,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;0,700;0,800;1,500;1,600&family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{__html: `
           (function() {
             try {
-              const theme = localStorage.getItem('theme') || 'system';
-              if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              const theme = localStorage.getItem('theme') || 'light';
+              if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
               } else {
                 document.documentElement.classList.remove('dark');
@@ -38,7 +38,7 @@ export default function RootLayout({
           })()
         `}} />
       </head>
-      <body className="font-sans antialiased bg-background text-[#0F172A] min-h-screen flex flex-col dark:text-slate-100 transition-colors duration-200">
+      <body className="font-sans antialiased bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200">
         <FirebaseClientProvider>
           <AuthProvider>
             <SearchProvider>

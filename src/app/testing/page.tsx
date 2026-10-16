@@ -164,7 +164,7 @@ export default function TestingDashboard() {
         <div className="flex-1 flex items-center justify-center p-6">
           <Card className="max-w-md w-full text-center p-8 rounded-3xl border-slate-200 shadow-xl">
             <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <CardTitle className="text-xl font-serif font-black uppercase text-slate-900">Restricted Test Suite</CardTitle>
+            <CardTitle className="text-xl font-sans font-black uppercase text-slate-900">Restricted Test Suite</CardTitle>
             <CardDescription className="mt-2 text-sm text-slate-500">
               The internal testing dashboard is restricted to development environments and authenticated administrators.
             </CardDescription>
@@ -220,7 +220,7 @@ export default function TestingDashboard() {
         <header className="flex justify-between items-center mb-8 shrink-0">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-3xl font-serif text-slate-900 font-black uppercase tracking-tight">Internal Test Suite Dashboard</h2>
+              <h2 className="text-3xl font-sans text-slate-900 font-black uppercase tracking-tight">Internal Test Suite Dashboard</h2>
               <Badge className="bg-gvsuBlue/10 text-gvsuBlue border-none text-[10px] uppercase font-bold">Development & QA</Badge>
             </div>
             <p className="text-slate-500 mt-1 font-medium text-xs">Systematic component, integration, LakerAI, and performance test runner.</p>

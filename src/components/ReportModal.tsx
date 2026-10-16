@@ -119,7 +119,7 @@ export function ReportModal({ triggerClassName, fullWidthMobile }: ReportModalPr
       </DialogTrigger>
       <DialogContent className="sm:max-w-[460px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl font-bold text-gvsuBlue dark:text-linkBlue">
+          <DialogTitle className="font-sans text-2xl font-bold text-gvsuBlue dark:text-linkBlue">
             Report Directory Issue
           </DialogTitle>
           <DialogDescription className="text-slate-600 dark:text-slate-400">

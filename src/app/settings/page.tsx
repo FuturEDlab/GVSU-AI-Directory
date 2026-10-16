@@ -40,7 +40,7 @@ export default function SettingsPage() {
         <GVSUHeader />
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
           <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F172A] dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] dark:text-white">
               GVSU Sign-In Required
             </h1>
             <p className="text-slate-600 dark:text-slate-300 mt-3 mb-8 text-sm">
@@ -67,7 +67,7 @@ export default function SettingsPage() {
           <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-1">
             Account Preferences
           </span>
-          <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight">
             Settings
           </h1>
           <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm sm:text-base">
@@ -78,7 +78,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <Card className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
             <CardHeader>
-              <CardTitle className="font-serif text-2xl font-bold">Appearance</CardTitle>
+              <CardTitle className="font-sans text-2xl font-bold">Appearance</CardTitle>
               <CardDescription>
                 Customize how the LakerAI Directory looks on your device.
               </CardDescription>

@@ -257,7 +257,7 @@ export function PromptSubmitModal({ isOpen, onClose }: PromptSubmitModalProps) {
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-gvsu-blue dark:text-purple-400" />
-            <DialogTitle className="text-2xl font-serif font-bold">Submit a Community Prompt</DialogTitle>
+            <DialogTitle className="text-2xl font-sans font-bold">Submit a Community Prompt</DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground mt-1">
             Share high-quality, reusable AI prompts with the GVSU community. Submissions are reviewed by admins before appearing in the directory.

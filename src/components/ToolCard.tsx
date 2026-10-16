@@ -1,6 +1,7 @@
 "use client";
 
 import { ToolSubmission } from "@/app/lib/tool-types";
+import { INITIAL_SEED_TOOLS } from "@/app/lib/seed-tools";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import { AIDisclaimer } from "./AIDisclaimer";
+import { TagBadge } from "./TagBadge";
 import Link from "next/link";
 
 interface ToolCardProps {
@@ -63,6 +65,7 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
   const { toast } = useToast();
   const [comments, setComments] = useState<any[]>([]);
   const [showComments, setShowComments] = useState(variant === "detail");
+  const [showAllTags, setShowAllTags] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -149,11 +152,25 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
     }).catch(() => toast({ variant: "destructive", title: "Comment failed" }));
   };
 
+  const seedFallback = useMemo(() => {
+    const cleanId = (tool.id || "").replace(/-seed$/, "").toLowerCase();
+    const cleanTitle = (tool.title || "").trim().toLowerCase();
+    return INITIAL_SEED_TOOLS.find(
+      (s) =>
+        s.id.toLowerCase() === (tool.id || "").toLowerCase() ||
+        s.id.replace(/-seed$/, "").toLowerCase() === cleanId ||
+        s.title.trim().toLowerCase() === cleanTitle
+    );
+  }, [tool.id, tool.title]);
+
+  const effectiveReportCard = tool.reportCard || seedFallback?.reportCard;
+  const effectiveOverallVerdict = tool.overallVerdict || seedFallback?.overallVerdict;
+
   const { riskRating, avgScore } = useMemo(() => {
     if (tool.health === "At Risk") {
       return { riskRating: "High Risk" as const, avgScore: null };
     }
-    const entries = Object.values(tool.reportCard || {}).filter(
+    const entries = Object.values(effectiveReportCard || {}).filter(
       (item: any) => item && typeof item.score === "number"
     ) as { score: number; summary: string }[];
 
@@ -170,23 +187,29 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
       return { riskRating: "Low Risk" as const, avgScore: null };
     }
     return { riskRating: "Moderate Risk" as const, avgScore: null };
-  }, [tool.health, tool.reportCard, tool.isVerified, tool.aiVetted]);
+  }, [tool.health, effectiveReportCard, tool.isVerified, tool.aiVetted]);
 
   const complianceTags = useMemo(() => {
-    if (!tool.tags) return [];
-    const ordered = [
-      ...(tool.tags.security_privacy || []),
-      ...(tool.tags.institutional_status || []),
-      ...(tool.tags.pedagogical_value || []),
-      ...(tool.tags.ethics_stewardship || []),
-      ...(tool.tags.access_cost || []),
-    ];
-    return Array.from(new Set(ordered));
-  }, [tool.tags]);
+    const t = tool.tags;
+    const s = seedFallback?.tags;
+    const extract = (src: any): string[] => {
+      if (!src) return [];
+      if (Array.isArray(src)) return src;
+      return [
+        ...(src.security_privacy || []),
+        ...(src.institutional_status || []),
+        ...(src.pedagogical_value || []),
+        ...(src.ethics_stewardship || []),
+        ...(src.access_cost || []),
+      ];
+    };
+    const merged = [...extract(t), ...extract(s)];
+    return Array.from(new Set(merged));
+  }, [tool.tags, seedFallback]);
 
   if (!mounted) {
     return (
-      <div className="h-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl animate-pulse p-5" />
+      <div className="h-64 bg-white border border-slate-200 rounded-xl animate-pulse p-5" />
     );
   }
 
@@ -201,15 +224,15 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
   const renderRiskBadge = () => {
     if (riskRating === "Low Risk") {
       return (
-        <Badge className="bg-bigLake/20 text-midnight dark:bg-bigLake/20 dark:text-bigLake border border-bigLake/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 rounded-md shadow-none shrink-0">
-          <ShieldCheck className="w-3.5 h-3.5 text-gvsuBlue dark:text-bigLake shrink-0" />
+        <Badge className="bg-bigLake/20 text-midnight border border-bigLake/60 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 rounded-md shadow-none shrink-0">
+          <ShieldCheck className="w-3.5 h-3.5 text-gvsuBlue shrink-0" />
           <span>Low Risk</span>
         </Badge>
       );
     }
     if (riskRating === "Moderate Risk") {
       return (
-        <Badge className="bg-archway/30 text-[#5C3A21] dark:bg-archway/20 dark:text-archway border border-archway px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 rounded-md shadow-none shrink-0">
+        <Badge className="bg-archway/30 text-[#5C3A21] border border-archway px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 rounded-md shadow-none shrink-0">
           <AlertTriangle className="w-3.5 h-3.5 text-carillonBrick shrink-0" />
           <span>Moderate Risk</span>
         </Badge>
@@ -223,14 +246,19 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
     );
   };
 
+  const visibleTags =
+    variant === "compact" && !showAllTags
+      ? complianceTags.slice(0, 3)
+      : complianceTags;
+
   return (
-    <Card className="glass-card flex flex-col h-full rounded-xl overflow-hidden group">
+    <Card className="bg-white border border-slate-200/90 shadow-xs hover:border-gvsuBlue/40 hover:shadow-md transition-all duration-200 flex flex-col h-full rounded-xl overflow-hidden group">
       {/* Compact Header Row: 52px-56px Icon Avatar + Title/Category + Risk Rating Badge */}
-      <div className="p-5 pb-4 flex items-start justify-between gap-3.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/40 dark:bg-slate-900/50">
+      <div className="p-5 pb-4 flex items-start justify-between gap-3.5 border-b border-slate-100 bg-slate-50/50">
         <div className="flex items-start gap-3.5 min-w-0 flex-1">
           <Link
             href={`/tools/${tool.id}`}
-            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs group-hover:border-gvsuBlue/40 transition-colors"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 shadow-2xs group-hover:border-gvsuBlue/40 transition-colors"
           >
             {imageSrc ? (
               <img
@@ -246,7 +274,7 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
                 }}
               />
             ) : (
-              <div className="w-full h-full bg-gvsuBlue flex items-center justify-center text-white font-serif font-bold text-xl">
+              <div className="w-full h-full bg-gvsuBlue flex items-center justify-center text-white font-sans font-bold text-xl">
                 {tool.title.substring(0, 1).toUpperCase()}
               </div>
             )}
@@ -254,11 +282,11 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-bold text-gvsuBlue dark:text-linkBlue uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-gvsuBlue uppercase tracking-widest">
                 {tool.category}
               </span>
               {avgScore !== null && (
-                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-200/70 dark:bg-slate-800 px-1.5 py-0.2 rounded">
+                <span className="text-[10px] font-bold text-slate-700 bg-slate-200/80 px-1.5 py-0.2 rounded">
                   {avgScore}/5.0
                 </span>
               )}
@@ -267,12 +295,12 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
             <div className="flex items-center gap-1.5 mt-0.5">
               <Link
                 href={`/tools/${tool.id}`}
-                className="hover:text-gvsuBlue dark:hover:text-linkBlue transition-colors min-w-0"
+                className="hover:text-gvsuBlue transition-colors min-w-0"
               >
                 <h3
                   className={cn(
-                    "font-serif font-bold text-[#0F172A] dark:text-white group-hover:text-gvsuBlue dark:group-hover:text-linkBlue transition-colors leading-snug",
-                    variant === "detail" ? "text-2xl sm:text-3xl" : "text-xl truncate"
+                    "font-sans font-bold tracking-tight text-[#0F172A] group-hover:text-gvsuBlue transition-colors leading-snug",
+                    variant === "detail" ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl truncate"
                   )}
                 >
                   {tool.title}
@@ -280,7 +308,7 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
               </Link>
               {(tool.isVerified || tool.aiVetted) && (
                 <BadgeCheck
-                  className="w-4 h-4 text-gvsuBlue dark:text-linkBlue shrink-0"
+                  className="w-4 h-4 text-gvsuBlue shrink-0"
                   aria-label="Vetted tool"
                 />
               )}
@@ -307,13 +335,13 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
       <CardContent className="p-5 flex-1 flex flex-col">
         <div className="mb-4">
           {variant === "detail" && (
-            <h4 className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue mb-2">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-gvsuBlue mb-2">
               Pedagogical &amp; FERPA Governance Summary
             </h4>
           )}
           <p
             className={cn(
-              "text-sm text-slate-700 dark:text-slate-300 leading-relaxed",
+              "text-sm text-slate-700 leading-relaxed",
               variant === "compact" && "line-clamp-3"
             )}
           >
@@ -321,76 +349,76 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
           </p>
         </div>
 
-        {/* Compliance & Stewardship Tags */}
+        {/* Compliance & Stewardship Tags with Hover Tooltips & Expandable +N more */}
         {complianceTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4 mt-auto pt-1">
-            {(variant === "compact" ? complianceTags.slice(0, 3) : complianceTags).map(
-              (tag) => {
-                const isSecurity =
-                  tag.includes("FERPA") ||
-                  tag.includes("PII") ||
-                  tag.includes("Walled Garden") ||
-                  tag.includes("Sanctioned");
-                return (
-                  <span
-                    key={tag}
-                    className={cn(
-                      "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold tracking-tight border",
-                      isSecurity
-                        ? "bg-archway/20 border-archway text-[#0F172A] dark:text-archway"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
-                    )}
-                  >
-                    {isSecurity && <CheckCircle2 className="w-3 h-3 text-gvsuBlue dark:text-linkBlue shrink-0" />}
-                    {tag}
-                  </span>
-                );
-              }
-            )}
-            {variant === "compact" && complianceTags.length > 3 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-1.5 mb-4 mt-auto pt-1">
+            {visibleTags.map((tag) => (
+              <TagBadge key={tag} tag={tag} />
+            ))}
+            {variant === "compact" && complianceTags.length > 3 && !showAllTags && (
+              <button
+                type="button"
+                onClick={() => setShowAllTags(true)}
+                aria-expanded="false"
+                aria-label={`Show ${complianceTags.length - 3} more compliance tags for ${tool.title}`}
+                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 hover:bg-gvsuBlue/10 text-gvsuBlue border border-slate-200 hover:border-gvsuBlue/40 transition-colors cursor-pointer"
+              >
                 +{complianceTags.length - 3} more
-              </span>
+              </button>
+            )}
+            {variant === "compact" && complianceTags.length > 3 && showAllTags && (
+              <button
+                type="button"
+                onClick={() => setShowAllTags(false)}
+                aria-expanded="true"
+                aria-label={`Show fewer compliance tags for ${tool.title}`}
+                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition-colors cursor-pointer"
+              >
+                Show less
+              </button>
             )}
           </div>
         )}
 
         {/* Full 4-Pillar Alignment Report Card (Expanded in Detail Mode) */}
-        {variant === "detail" && tool.aiVetted && tool.reportCard && (
-          <div className="space-y-5 mt-4 pt-5 border-t border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between">
-              <h4 className="font-serif text-xl font-bold text-[#0F172A] dark:text-white">
+        {variant === "detail" && effectiveReportCard && (
+          <div className="space-y-5 mt-4 pt-5 border-t border-slate-200">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h4 className="font-sans text-xl font-bold tracking-tight text-[#0F172A]">
                 4-Pillar Institutional Alignment Scorecard
               </h4>
-              <span className="text-xs font-bold uppercase tracking-wider text-gvsuBlue dark:text-linkBlue">
-                GVSU Governance Audit
-              </span>
+              <Link
+                href="/governance"
+                className="text-xs font-bold uppercase tracking-wider text-gvsuBlue hover:underline"
+              >
+                View GVSU Rubric &rarr;
+              </Link>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(tool.reportCard).map(([key, data]: any) => {
+              {Object.entries(effectiveReportCard).map(([key, data]: any) => {
                 if (!data || typeof data.score !== "number") return null;
                 const label = PILLAR_LABELS[key] || key.replace(/_/g, " ");
                 const pct = Math.min(100, Math.max(0, (data.score / 5) * 100));
                 return (
                   <div
                     key={key}
-                    className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2"
+                    className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2"
                   >
                     <div className="flex justify-between items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
                         {label}
                       </span>
                       <span className="text-xs font-bold px-2 py-0.5 rounded bg-gvsuBlue text-white">
                         {data.score} / 5
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full",
                           data.score >= 4
-                            ? "bg-gvsuBlue dark:bg-bigLake"
+                            ? "bg-gvsuBlue"
                             : data.score >= 3
                             ? "bg-archway"
                             : "bg-carillonBrick"
@@ -398,7 +426,7 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <p className="text-xs text-slate-700 leading-relaxed">
                       {data.summary}
                     </p>
                   </div>
@@ -406,14 +434,14 @@ export function ToolCard({ tool, variant = "compact" }: ToolCardProps) {
               })}
             </div>
 
-            {tool.overallVerdict && (
+            {effectiveOverallVerdict && (
               <div className="p-4 rounded-xl bg-midnight text-white border border-midnight flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-linkBlue block mb-1">
                     Institutional Verdict
                   </span>
-                  <p className="font-serif text-base sm:text-lg font-medium text-white leading-snug">
-                    {tool.overallVerdict}
+                  <p className="font-sans text-base sm:text-lg font-semibold text-white leading-snug">
+                    {effectiveOverallVerdict}
                   </p>
                 </div>
               </div>

@@ -18,8 +18,20 @@ export default function ToolPage() {
   const params = useParams();
   const toolId = params?.toolId as string;
   const router = useRouter();
-  const [tool, setTool] = useState<ToolSubmission | null>(null);
-  const [loading, setLoading] = useState(true);
+  const seedMatch = INITIAL_SEED_TOOLS.find(
+    (t) => t.id === toolId || t.id === `${toolId}-seed` || t.id.replace(/-seed$/, "") === toolId
+  );
+
+  const [tool, setTool] = useState<ToolSubmission | null>(() =>
+    seedMatch
+      ? ({
+          ...seedMatch,
+          submitterEmail: "vanharkj@mail.gvsu.edu",
+          submitterId: "admin-seed",
+        } as unknown as ToolSubmission)
+      : null
+  );
+  const [loading, setLoading] = useState(!seedMatch);
   const [error, setError] = useState<string | null>(null);
 
   useAuth();
@@ -33,27 +45,23 @@ export default function ToolPage() {
 
         if (docSnap.exists()) {
           setTool({ id: docSnap.id, ...docSnap.data() } as ToolSubmission);
+        } else if (seedMatch) {
+          setTool({
+            ...seedMatch,
+            submitterEmail: "vanharkj@mail.gvsu.edu",
+            submitterId: "admin-seed",
+          } as unknown as ToolSubmission);
         } else {
-          const fallback = INITIAL_SEED_TOOLS.find((t) => t.id === toolId);
-          if (fallback) {
-            setTool({
-              ...fallback,
-              submitterEmail: "vanharkj@mail.gvsu.edu",
-              submitterId: "admin-seed",
-            } as ToolSubmission);
-          } else {
-            setError("Tool not found. It may have been removed or never existed.");
-          }
+          setError("Tool not found. It may have been removed or never existed.");
         }
       } catch (err) {
         console.error("Error fetching tool:", err);
-        const fallback = INITIAL_SEED_TOOLS.find((t) => t.id === toolId);
-        if (fallback) {
+        if (seedMatch) {
           setTool({
-            ...fallback,
+            ...seedMatch,
             submitterEmail: "vanharkj@mail.gvsu.edu",
             submitterId: "admin-seed",
-          } as ToolSubmission);
+          } as unknown as ToolSubmission);
         } else {
           setError("Unable to load the tool right now. Please try again.");
         }
@@ -63,17 +71,17 @@ export default function ToolPage() {
     }
 
     fetchTool();
-  }, [toolId]);
+  }, [toolId, seedMatch]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <GVSUHeader />
 
-      <main className="flex-1 container mx-auto px-4 sm:px-8 pt-8 pb-16 max-w-4xl">
+      <main className="flex-1 container mx-auto px-4 sm:px-8 pt-10 sm:pt-12 pb-20 max-w-4xl">
         <Button
           variant="ghost"
           onClick={() => router.push("/")}
-          className="mb-6 text-slate-600 dark:text-slate-300 hover:text-gvsuBlue font-bold tracking-wider text-xs uppercase min-h-[44px] px-3 -ml-3"
+          className="mb-6 text-slate-600 hover:text-gvsuBlue font-bold tracking-wider text-xs uppercase min-h-[44px] px-3 -ml-3"
         >
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Discovery Hub
         </Button>
@@ -86,10 +94,10 @@ export default function ToolPage() {
         ) : error || !tool ? (
           <div className="bg-carillonBrick/10 border border-carillonBrick/30 rounded-2xl p-8 text-center max-w-lg mx-auto mt-10">
             <AlertTriangle className="w-12 h-12 text-carillonBrick mx-auto mb-4" />
-            <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-white mb-2">
+            <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-900 mb-2">
               Tool Not Found
             </h2>
-            <p className="text-slate-700 dark:text-slate-300 mb-6 text-sm">{error}</p>
+            <p className="text-slate-700 mb-6 text-sm">{error}</p>
             <Button onClick={() => router.push("/")} className="bg-gvsuBlue hover:bg-midnight text-white font-bold">
               Return to Discovery Hub
             </Button>

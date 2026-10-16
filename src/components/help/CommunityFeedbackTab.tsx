@@ -290,7 +290,7 @@ export function CommunityFeedbackTab() {
       }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl text-gvsuBlue uppercase">Community Feedback</DialogTitle>
+            <DialogTitle className="font-sans text-2xl text-gvsuBlue uppercase">Community Feedback</DialogTitle>
             <DialogDescription>Submit bugs, request features, or suggest improvements to the Directory.</DialogDescription>
           </DialogHeader>
 

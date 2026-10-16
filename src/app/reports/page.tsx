@@ -92,7 +92,7 @@ export default function YourReportsPage() {
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
           <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
             <Flag className="w-14 h-14 mx-auto mb-5 text-gvsuBlue opacity-80 dark:text-linkBlue" />
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F172A] dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] dark:text-white">
               GVSU Sign-In Required
             </h1>
             <p className="text-slate-600 dark:text-slate-300 mt-3 mb-8 text-sm">
@@ -120,7 +120,7 @@ export default function YourReportsPage() {
             <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-1">
               Directory Stewardship
             </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight">
               Your Reports
             </h1>
             <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm sm:text-base">
@@ -144,7 +144,7 @@ export default function YourReportsPage() {
         ) : sortedReports.length === 0 ? (
           <div className="py-20 text-center border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 flex flex-col items-center p-8">
             <Inbox className="w-12 h-12 text-slate-400 mb-3" />
-            <h2 className="font-serif text-xl font-bold text-slate-900 dark:text-white">No Reports Filed Yet</h2>
+            <h2 className="font-sans text-xl font-bold text-slate-900 dark:text-white">No Reports Filed Yet</h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               If you spot any mistakes on the AI Directory, you can file them by clicking &quot;Report a Mistake&quot;.
             </p>
@@ -170,7 +170,7 @@ export default function YourReportsPage() {
                           <span>{formatReportDate(report.createdAt)}</span>
                         </div>
                       </div>
-                      <h2 className="font-serif font-bold text-2xl text-[#0F172A] dark:text-white mt-1">
+                      <h2 className="font-sans font-bold text-2xl text-[#0F172A] dark:text-white mt-1">
                         {report.toolName}
                       </h2>
                     </div>

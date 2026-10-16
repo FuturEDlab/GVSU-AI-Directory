@@ -137,7 +137,7 @@ export function SubmissionModal() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl sm:text-3xl text-gvsuBlue dark:text-linkBlue font-bold">
+          <DialogTitle className="font-sans text-2xl sm:text-3xl text-gvsuBlue dark:text-linkBlue font-bold">
             Recommend an AI Tool
           </DialogTitle>
           <DialogDescription className="text-slate-600 dark:text-slate-400">

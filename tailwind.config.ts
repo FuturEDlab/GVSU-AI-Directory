@@ -12,16 +12,16 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Open Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-        serif: ['"EB Garamond"', 'Georgia', 'serif'],
+        serif: ['"Open Sans"', 'system-ui', '-apple-system', 'sans-serif'],
         body: ['"Open Sans"', 'system-ui', '-apple-system', 'sans-serif'],
-        headline: ['"EB Garamond"', 'Georgia', 'serif'],
+        headline: ['"Open Sans"', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         gvsuBlue: '#0032A0',
         'gvsu-blue': '#0032A0',
         gvsuBlack: '#000000',
         gvsuSlate: '#0F172A',
-        midnight: '#13155C',
+        midnight: '#0A1931',
         linkBlue: '#0ECBF0',
         'link-blue': '#0ECBF0',
         bigLake: '#3DD1CC',

@@ -20,6 +20,6 @@ export function setTheme(theme: Theme) {
 }
 
 export function getTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
-  return (localStorage.getItem('theme') as Theme) || 'system';
+  if (typeof window === 'undefined') return 'light';
+  return (localStorage.getItem('theme') as Theme) || 'light';
 }

@@ -27,7 +27,7 @@ export default function ErrorBoundary({
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-2xl font-serif font-bold text-gvsuBlue">
+          <h2 className="text-2xl font-sans font-bold text-gvsuBlue">
             {isPermissionError ? "Institutional Access Restricted" : "Unexpected Application Error"}
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed">

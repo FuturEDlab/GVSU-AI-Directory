@@ -36,23 +36,23 @@ export function ToolCommunityPrompts({ toolId, toolTitle }: ToolCommunityPrompts
   );
 
   return (
-    <div className="mt-12 space-y-6 pt-8 border-t border-slate-200 dark:border-slate-800">
+    <div className="mt-10 bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6 scroll-mt-32">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-gvsu-blue dark:text-purple-400" />
-            <h3 className="text-2xl font-bold font-serif text-slate-900 dark:text-white">
+            <Sparkles className="w-5 h-5 text-gvsuBlue" />
+            <h3 className="text-2xl font-bold font-sans tracking-tight text-slate-900">
               Community Prompts
             </h3>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Community-created prompt templates tailored for <strong className="text-slate-700 dark:text-slate-300">{toolTitle}</strong>.
+          <p className="text-sm text-slate-600 mt-1">
+            Community-created prompt templates tailored for <strong className="text-slate-800">{toolTitle}</strong>.
           </p>
         </div>
 
         <Button 
           size="sm" 
-          className="bg-gvsu-blue hover:bg-gvsu-blue/90 text-white gap-1.5 shadow-sm font-semibold shrink-0"
+          className="bg-gvsuBlue hover:bg-midnight text-white gap-1.5 shadow-xs font-bold text-xs uppercase tracking-wider h-10 px-4 shrink-0"
           onClick={() => setIsSubmitModalOpen(true)}
         >
           <Plus className="w-4 h-4" />
@@ -61,14 +61,14 @@ export function ToolCommunityPrompts({ toolId, toolTitle }: ToolCommunityPrompts
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-10 text-slate-400">
-          <Loader2 className="w-6 h-6 animate-spin mr-2 text-gvsu-blue" />
+        <div className="flex items-center justify-center py-10 text-slate-500">
+          <Loader2 className="w-6 h-6 animate-spin mr-2 text-gvsuBlue" />
           <span className="text-sm">Loading tool prompts...</span>
         </div>
       ) : !prompts || prompts.length === 0 ? (
-        <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+        <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70">
           <BookOpen className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-80" />
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          <p className="text-sm font-semibold text-slate-700">
             No community prompts attached to {toolTitle} yet.
           </p>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -77,7 +77,7 @@ export function ToolCommunityPrompts({ toolId, toolTitle }: ToolCommunityPrompts
           <Button 
             variant="outline" 
             size="sm" 
-            className="mt-4 border-gvsu-blue text-gvsu-blue hover:bg-gvsu-blue hover:text-white"
+            className="mt-4 border-gvsuBlue text-gvsuBlue hover:bg-gvsuBlue hover:text-white font-bold text-xs uppercase tracking-wider"
             onClick={() => setIsSubmitModalOpen(true)}
           >
             <Plus className="w-3.5 h-3.5 mr-1.5" />

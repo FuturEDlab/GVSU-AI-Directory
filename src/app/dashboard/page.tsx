@@ -93,7 +93,7 @@ export default function Dashboard() {
         <main className="flex-1 container mx-auto flex items-center justify-center p-6">
           <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 text-center rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-md w-full">
             <UserX className="w-14 h-14 mx-auto mb-5 text-gvsuBlue dark:text-linkBlue opacity-80" />
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0F172A] dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-sans font-bold text-[#0F172A] dark:text-white">
               GVSU Laker Sign-In Required
             </h1>
             <p className="text-slate-600 dark:text-slate-300 mt-3 mb-8 text-sm leading-relaxed">
@@ -120,7 +120,7 @@ export default function Dashboard() {
           <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-1">
             Contributor Workspace
           </span>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight">
             My Dashboard
           </h1>
           <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm sm:text-base">
@@ -132,22 +132,22 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
             <LayoutList className="w-8 h-8 text-gvsuBlue dark:text-linkBlue mx-auto mb-3" />
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Submitted</p>
-            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.total}</p>
+            <p className="text-4xl sm:text-5xl font-sans font-bold text-[#0F172A] dark:text-white mt-2">{stats.total}</p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
             <CheckCircle2 className="w-8 h-8 text-bigLake mx-auto mb-3" />
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Published on Hub</p>
-            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.published}</p>
+            <p className="text-4xl sm:text-5xl font-sans font-bold text-[#0F172A] dark:text-white mt-2">{stats.published}</p>
           </div>
           <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs text-center">
             <Clock className="w-8 h-8 text-carillonBrick mx-auto mb-3" />
             <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">In Governance Review</p>
-            <p className="text-4xl sm:text-5xl font-serif font-bold text-[#0F172A] dark:text-white mt-2">{stats.pending}</p>
+            <p className="text-4xl sm:text-5xl font-sans font-bold text-[#0F172A] dark:text-white mt-2">{stats.pending}</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h2 className="font-serif text-2xl font-bold text-[#0F172A] dark:text-white mb-4">
+          <h2 className="font-sans text-2xl font-bold text-[#0F172A] dark:text-white mb-4">
             Recent Submission Activity
           </h2>
           {tools.length === 0 && !dataLoading ? (
@@ -162,7 +162,7 @@ export default function Dashboard() {
                   className="p-5 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:border-gvsuBlue/40 transition-all"
                 >
                   <div>
-                    <h3 className="font-serif font-bold text-xl text-[#0F172A] dark:text-white">{tool.title}</h3>
+                    <h3 className="font-sans font-bold text-xl text-[#0F172A] dark:text-white">{tool.title}</h3>
                     <p className="text-xs font-bold text-gvsuBlue dark:text-linkBlue uppercase tracking-wider mt-0.5">
                       {tool.category}
                     </p>

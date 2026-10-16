@@ -83,7 +83,7 @@ export function ToolErrorModal({ toolId, toolName }: ToolErrorModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] rounded-3xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl text-slate-900 font-black uppercase">Report Mistake</DialogTitle>
+          <DialogTitle className="font-sans text-2xl text-slate-900 font-black uppercase">Report Mistake</DialogTitle>
           <DialogDescription className="text-slate-500 font-medium">Help our admins maintain the accuracy of the LakerAI Hub.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">

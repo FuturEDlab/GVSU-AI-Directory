@@ -39,7 +39,7 @@ export function PromptDetailModal({ isOpen, onClose, prompt }: PromptDetailModal
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-6 md:p-8">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
+          <DialogTitle className="text-2xl font-sans font-bold text-slate-900 dark:text-white">
             {promptTitle}
           </DialogTitle>
           {prompt.description && (

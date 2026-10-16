@@ -120,20 +120,20 @@ function PromptLibraryContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <GVSUHeader />
 
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-8 py-10">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-8 pt-10 sm:pt-12 pb-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue">
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gvsuBlue">
               <Sparkles className="w-4 h-4" />
               <span>GVSU Faculty &amp; Student Prompt Repository</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-serif text-[#0F172A] dark:text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-sans text-[#0F172A] tracking-tight">
               Community Prompt Library
             </h1>
-            <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
+            <p className="text-slate-600 text-sm sm:text-base max-w-2xl leading-relaxed">
               Discover, copy, and share vetted AI prompt templates for teaching, syllabus design, research synthesis, and academic workflows.
             </p>
           </div>
@@ -148,14 +148,14 @@ function PromptLibraryContent() {
         </div>
 
         {/* SEARCH & FILTERS ROW */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 mb-8 shadow-xs space-y-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 mb-8 shadow-xs space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             {/* Search Input */}
             <div className="md:col-span-5 relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <Input
                 placeholder="Search by title, prompt text, tags, or tool..."
-                className="pl-10 h-11 text-sm rounded-lg border-slate-300 dark:border-slate-700"
+                className="pl-10 h-11 text-sm rounded-lg border-slate-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -164,7 +164,7 @@ function PromptLibraryContent() {
             {/* Model Filter */}
             <div className="md:col-span-2">
               <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300 dark:border-slate-700">
+                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300">
                   <SelectValue placeholder="AI Model" />
                 </SelectTrigger>
                 <SelectContent>
@@ -181,7 +181,7 @@ function PromptLibraryContent() {
             {/* Category Filter */}
             <div className="md:col-span-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300 dark:border-slate-700">
+                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +198,7 @@ function PromptLibraryContent() {
             {/* Tool Filter */}
             <div className="md:col-span-3">
               <Select value={selectedToolFilter} onValueChange={setSelectedToolFilter}>
-                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300 dark:border-slate-700">
+                <SelectTrigger className="h-11 text-xs font-semibold rounded-lg border-slate-300">
                   <SelectValue placeholder="Associated Tool" />
                 </SelectTrigger>
                 <SelectContent>
@@ -214,7 +214,7 @@ function PromptLibraryContent() {
           </div>
 
           {hasActiveFilters && (
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-600">
               <span>
                 Showing {filteredPrompts.length} prompt{filteredPrompts.length !== 1 ? "s" : ""} matching criteria
               </span>
@@ -237,12 +237,12 @@ function PromptLibraryContent() {
             <p className="text-sm font-medium">Loading community prompts...</p>
           </div>
         ) : !prompts || prompts.length === 0 ? (
-          <div className="text-center py-20 border rounded-2xl bg-white dark:bg-slate-900 border-dashed border-slate-300 dark:border-slate-800 p-8">
+          <div className="text-center py-20 border rounded-2xl bg-white border-dashed border-slate-300 p-8">
             <BookOpen className="w-12 h-12 mx-auto mb-4 text-gvsuBlue/60" />
-            <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-900">
               No Prompts Published Yet
             </h2>
-            <p className="text-sm mt-2 text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            <p className="text-sm mt-2 text-slate-600 max-w-md mx-auto">
               Be the first to share a vetted prompt template with the GVSU academic community.
             </p>
             <Button
@@ -253,12 +253,12 @@ function PromptLibraryContent() {
             </Button>
           </div>
         ) : filteredPrompts.length === 0 ? (
-          <div className="text-center py-20 border rounded-2xl bg-white dark:bg-slate-900 border-dashed border-slate-300 dark:border-slate-800 p-8">
+          <div className="text-center py-20 border rounded-2xl bg-white border-dashed border-slate-300 p-8">
             <Filter className="w-10 h-10 mx-auto mb-3 text-slate-400" />
-            <h2 className="font-serif text-2xl font-bold text-slate-900 dark:text-white">
+            <h2 className="font-sans text-2xl font-bold tracking-tight text-slate-900">
               No Prompts Found Matching Criteria
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            <p className="text-sm text-slate-600 mt-1 max-w-md mx-auto">
               Try adjusting your search terms or filters, or clear your filters to view all prompts.
             </p>
             <div className="flex flex-wrap justify-center gap-3 mt-6">
@@ -299,7 +299,7 @@ export default function PromptLibraryPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 font-sans flex flex-col">
+        <div className="min-h-screen bg-[#F8FAFC] font-sans flex flex-col">
           <GVSUHeader />
           <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-600">
             <Loader2 className="w-8 h-8 animate-spin mb-4 text-gvsuBlue" />

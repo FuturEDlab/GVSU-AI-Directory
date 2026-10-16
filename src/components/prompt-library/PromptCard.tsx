@@ -32,7 +32,7 @@ export function PromptCard({ prompt, onClick }: PromptCardProps) {
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="line-clamp-1 text-lg font-bold font-serif group-hover:text-gvsu-blue transition-colors">
+          <CardTitle className="line-clamp-1 text-lg font-bold font-sans group-hover:text-gvsu-blue transition-colors">
             {title}
           </CardTitle>
           <Button

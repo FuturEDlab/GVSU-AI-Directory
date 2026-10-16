@@ -52,7 +52,7 @@ export function CelebrationOverlay() {
           <div className="w-16 h-16 bg-gvsuBlue/10 rounded-full flex items-center justify-center text-gvsuBlue mb-4">
             <PartyPopper className="w-8 h-8 animate-bounce" />
           </div>
-          <AlertDialogTitle className="font-serif text-2xl font-black text-slate-900 uppercase">Great News!</AlertDialogTitle>
+          <AlertDialogTitle className="font-sans text-2xl font-black text-slate-900 uppercase">Great News!</AlertDialogTitle>
           <AlertDialogDescription className="text-slate-600 font-medium pt-2">
             Your tool was approved. You can see it live on the homepage now!
           </AlertDialogDescription>

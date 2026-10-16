@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import { GVSUHeader } from "@/components/GVSUHeader";
 import { GVSUFooter } from "@/components/GVSUFooter";
 import { SubmissionModal } from "@/components/SubmissionModal";
@@ -57,7 +58,13 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
   const [isSeeding, setIsSeeding] = useState(false);
-  const [fallbackTools, setFallbackTools] = useState<ToolSubmission[]>([]);
+  const [fallbackTools, setFallbackTools] = useState<ToolSubmission[]>(() =>
+    INITIAL_SEED_TOOLS.map((t) => ({
+      ...t,
+      submitterEmail: "vanharkj@mail.gvsu.edu",
+      submitterId: "admin-seed",
+    })) as unknown as ToolSubmission[]
+  );
   const seedTriggeredRef = useRef(false);
 
   useEffect(() => {
@@ -178,26 +185,26 @@ export default function Home() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans">
       <GVSUHeader searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       {/* Compact Institutional Hero Section */}
       <section className="pt-8 sm:pt-12 pb-8 px-4 sm:px-8">
-        <div className="max-w-[1440px] mx-auto hero-glass-container p-6 sm:p-10 md:p-12 text-center border-slate-200 dark:border-slate-800">
-          <Badge className="mb-4 bg-gvsuBlue/10 text-gvsuBlue dark:bg-linkBlue/15 dark:text-linkBlue hover:bg-gvsuBlue/15 border border-gvsuBlue/20 px-3.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase inline-flex items-center">
-            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-gvsuBlue dark:text-linkBlue" />
+        <div className="max-w-[1440px] mx-auto bg-white rounded-2xl shadow-sm p-6 sm:p-10 md:p-12 text-center border border-slate-200">
+          <Badge className="mb-4 bg-gvsuBlue/10 text-gvsuBlue hover:bg-gvsuBlue/15 border border-gvsuBlue/20 px-3.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase inline-flex items-center">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-gvsuBlue" />
             Grand Valley State University · Academic AI Directory
           </Badge>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-serif font-bold text-[#0F172A] dark:text-white leading-tight mb-4 tracking-tight">
-            Institutional <span className="text-gvsuBlue dark:text-linkBlue">LakerAI Hub</span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-sans font-bold text-[#0F172A] leading-tight mb-4 tracking-tight">
+            Institutional <span className="text-gvsuBlue">LakerAI Hub</span>
           </h1>
 
-          <p className="text-sm sm:text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg text-slate-700 max-w-2xl mx-auto mb-8 leading-relaxed">
             Discover, evaluate, and adopt AI tools vetted for{" "}
-            <strong className="text-[#0F172A] dark:text-white font-semibold">pedagogical value</strong>,{" "}
-            <strong className="text-gvsuBlue dark:text-linkBlue font-semibold">FERPA privacy compliance</strong>, and{" "}
-            <strong className="text-[#0F172A] dark:text-white font-semibold">institutional stewardship</strong>.
+            <strong className="text-[#0F172A] font-semibold">pedagogical value</strong>,{" "}
+            <strong className="text-gvsuBlue font-semibold">FERPA privacy compliance</strong>, and{" "}
+            <strong className="text-[#0F172A] font-semibold">institutional stewardship</strong>.
           </p>
 
           <div className="max-w-2xl mx-auto mb-8">
@@ -211,10 +218,10 @@ export default function Home() {
                   }}
                   aria-label="Toggle compliance filters"
                   className={cn(
-                    "h-full px-4 sm:px-5 rounded-none border-l border-slate-200 dark:border-slate-700 text-xs font-bold tracking-wider uppercase relative z-10 min-w-[44px]",
+                    "h-full px-4 sm:px-5 rounded-none border-l border-slate-200 text-xs font-bold tracking-wider uppercase relative z-10 min-w-[44px]",
                     showFilters
                       ? "text-gvsuBlue bg-gvsuBlue/10"
-                      : "text-slate-600 dark:text-slate-300 hover:text-gvsuBlue"
+                      : "text-slate-600 hover:text-gvsuBlue"
                   )}
                 >
                   <Filter className="w-4 h-4 sm:mr-1.5" />
@@ -227,11 +234,13 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <SubmissionModal />
             <Button
+              asChild
               variant="outline"
-              className="border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:border-gvsuBlue hover:text-gvsuBlue transition-colors"
-              onClick={() => window.open("https://www.gvsu.edu/ai/", "_blank")}
+              className="border-slate-300 text-slate-800 font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:border-gvsuBlue hover:text-gvsuBlue transition-colors"
             >
-              GVSU AI Governance Guide <ArrowRight className="ml-2 w-4 h-4" />
+              <Link href="/governance">
+                GVSU AI Governance Guide <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
             </Button>
             {isAdmin && (
               <AlertDialog>
@@ -239,7 +248,7 @@ export default function Home() {
                   <Button
                     variant="outline"
                     disabled={isSeeding}
-                    className="border-arboretum text-arboretum dark:border-linkBlue dark:text-linkBlue font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:bg-arboretum/10"
+                    className="border-arboretum text-arboretum font-bold h-11 px-6 rounded-lg text-xs tracking-wider uppercase hover:bg-arboretum/10"
                   >
                     {isSeeding ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -251,7 +260,7 @@ export default function Home() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-gvsuBlue font-serif text-xl">
+                    <AlertDialogTitle className="text-gvsuBlue font-sans font-bold tracking-tight text-xl">
                       Pre-Seed the LakerAI Directory?
                     </AlertDialogTitle>
                     <AlertDialogDescription>
@@ -285,7 +294,7 @@ export default function Home() {
                 "px-4 py-2 min-h-[40px] text-xs font-bold tracking-wider transition-all rounded-lg border uppercase whitespace-nowrap shrink-0",
                 activeCategory === cat
                   ? "bg-gvsuBlue text-white border-gvsuBlue shadow-xs"
-                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-gvsuBlue hover:text-gvsuBlue"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-gvsuBlue hover:text-gvsuBlue"
               )}
             >
               {cat}
@@ -298,9 +307,9 @@ export default function Home() {
       <main className="max-w-[1440px] w-full mx-auto px-4 sm:px-8 flex-1 flex flex-col md:flex-row gap-8 mb-16">
         {showFilters && (
           <aside className="w-full md:w-64 shrink-0 space-y-6 animate-in slide-in-from-left duration-200">
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 md:sticky md:top-28 shadow-xs">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
-                <h2 className="font-serif font-bold text-slate-900 dark:text-white text-base">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 md:sticky md:top-28 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h2 className="font-sans font-bold tracking-tight text-slate-900 text-base">
                   Compliance Filters
                 </h2>
                 {selectedTags.length > 0 && (
@@ -331,7 +340,7 @@ export default function Home() {
                     />
                     <label
                       htmlFor={t}
-                      className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer font-semibold group-hover:text-gvsuBlue transition-colors"
+                      className="text-xs text-slate-700 cursor-pointer font-semibold group-hover:text-gvsuBlue transition-colors"
                     >
                       {t}
                     </label>
@@ -349,32 +358,32 @@ export default function Home() {
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between h-64 animate-pulse"
+                  className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col justify-between h-64 animate-pulse"
                 >
                   <div className="flex items-start gap-3.5">
-                    <div className="w-13 h-13 rounded-xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                    <div className="w-13 h-13 rounded-xl bg-slate-200 shrink-0" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-                      <div className="h-5 w-40 bg-slate-200 dark:bg-slate-800 rounded" />
+                      <div className="h-3 w-24 bg-slate-200 rounded" />
+                      <div className="h-5 w-40 bg-slate-200 rounded" />
                     </div>
-                    <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-5 w-20 bg-slate-200 rounded" />
                   </div>
                   <div className="space-y-2 my-4">
-                    <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-                    <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
-                    <div className="h-3 w-4/6 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-3 w-full bg-slate-200 rounded" />
+                    <div className="h-3 w-5/6 bg-slate-200 rounded" />
+                    <div className="h-3 w-4/6 bg-slate-200 rounded" />
                   </div>
-                  <div className="h-9 w-full bg-slate-100 dark:bg-slate-800/60 rounded-lg" />
+                  <div className="h-9 w-full bg-slate-100 rounded-lg" />
                 </div>
               ))}
             </div>
           ) : filteredTools.length === 0 ? (
-            <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
+            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300 p-8">
               <LayoutGrid className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-              <h3 className="font-serif text-xl font-bold text-slate-900 dark:text-white mb-1">
+              <h3 className="font-sans text-xl font-bold tracking-tight text-slate-900 mb-1">
                 No Matching Tools Found
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md mx-auto">
+              <p className="text-slate-600 text-sm max-w-md mx-auto">
                 Try clearing your active category or search filters to browse all vetted tools in the directory.
               </p>
             </div>

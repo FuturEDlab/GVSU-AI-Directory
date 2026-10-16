@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --gvsu-blue: #0032A0;
-    --gvsu-midnight: #13155C;
+    --gvsu-midnight: #0A1931;
     --gvsu-link-blue: #0ECBF0;
     --gvsu-big-lake: #3DD1CC;
     --gvsu-arboretum: #4A0C6E;
@@ -65,8 +65,8 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
-  h1, h2, .font-serif {
-    font-family: 'EB Garamond', Georgia, serif;
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: 'Open Sans', system-ui, -apple-system, sans-serif;
   }
 }
 

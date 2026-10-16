@@ -290,7 +290,7 @@ export function AdminPromptModerationTab() {
 
   return (
     <div className="flex-1 flex flex-col bg-white rounded-2xl border shadow-sm p-6 overflow-hidden">
-      <h3 className="text-2xl font-bold font-serif text-gvsuBlue mb-6">Prompt Library Moderation</h3>
+      <h3 className="text-2xl font-bold font-sans text-gvsuBlue mb-6">Prompt Library Moderation</h3>
       
       <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="flex-1 flex flex-col min-h-0">
         <TabsList className="w-full max-w-md bg-slate-100 p-1 mb-6">

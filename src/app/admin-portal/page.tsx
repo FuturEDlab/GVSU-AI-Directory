@@ -131,7 +131,7 @@ export default function AdminPortal() {
           <div className="max-w-[1440px] w-full mx-auto py-8 px-4 sm:px-8 flex-1 flex flex-col overflow-hidden">
             <header className="flex justify-between items-center mb-8 shrink-0">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+                <h1 className="text-3xl sm:text-4xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight">
                   Governance Hub
                 </h1>
                 <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">
@@ -158,7 +158,7 @@ export default function AdminPortal() {
               <span className="text-xs font-bold uppercase tracking-widest text-gvsuBlue dark:text-linkBlue block mb-0.5">
                 GVSU Administration &amp; Compliance
               </span>
-              <h1 className="text-3xl sm:text-4xl font-serif text-[#0F172A] dark:text-white font-bold tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-sans text-[#0F172A] dark:text-white font-bold tracking-tight">
                 Governance Hub
               </h1>
               <p className="text-slate-600 dark:text-slate-400 mt-0.5 text-sm">
