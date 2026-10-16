@@ -6,7 +6,8 @@ import { getAuth } from 'firebase-admin/auth';
 if (!getApps().length) {
   try {
     initializeApp({
-      credential: applicationDefault()
+      credential: applicationDefault(),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gvsu-ai-directory',
     });
   } catch (error) {
     console.error('Firebase admin initialization error', error);

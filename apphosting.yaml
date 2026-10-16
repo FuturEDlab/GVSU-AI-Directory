@@ -17,3 +17,9 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: GEMINI_API_KEY
+    secret: gemini-api-key
+    availability:
+      - BUILD
+      - RUNTIME
+

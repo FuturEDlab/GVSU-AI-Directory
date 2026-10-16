@@ -59,10 +59,14 @@ export interface ReportCardItem {
 }
 
 export interface ToolReportCard {
-  security: ReportCardItem;
-  ethics: ReportCardItem;
-  pedagogy: ReportCardItem;
-  readiness: ReportCardItem;
+  security_privacy: ReportCardItem;
+  pedagogical_value: ReportCardItem;
+  ethics_stewardship: ReportCardItem;
+  access_cost: ReportCardItem;
+  security?: ReportCardItem;
+  ethics?: ReportCardItem;
+  pedagogy?: ReportCardItem;
+  readiness?: ReportCardItem;
 }
 
 export interface ToolSubmission {

@@ -167,7 +167,7 @@ export function ToolCard({ tool }: ToolCardProps) {
                 {Object.entries(tool.reportCard || {}).map(([key, data]: any) => (
                   <div key={key} className="space-y-1 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
                     <div className="flex justify-between items-center">
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">{key.replace('_', ' ')}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">{key.replace(/_/g, ' ')}</span>
                       <span className="text-[9px] font-black text-gvsuBlue">{data.score}/5</span>
                     </div>
                     <p className="text-[10px] text-slate-500 leading-tight line-clamp-2">{data.summary}</p>

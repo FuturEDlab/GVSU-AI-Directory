@@ -1,169 +1,33 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, AI_MODELS } from '@/ai/genkit';
 import { z } from 'genkit';
-import * as cheerio from 'cheerio';
-
-function isPrivateOrReservedHost(hostname: string): boolean {
-  const lower = hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (
-    lower === 'localhost' ||
-    lower === '0.0.0.0' ||
-    lower === '::1' ||
-    lower === '0:0:0:0:0:0:0:1' ||
-    lower.endsWith('.localhost') ||
-    lower.endsWith('.local') ||
-    lower.endsWith('.internal') ||
-    lower === 'metadata.google.internal'
-  ) {
-    return true;
-  }
-
-  const ipv4Match = lower.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4Match) {
-    const [, a, b] = ipv4Match.map(Number);
-    if (
-      a === 0 ||
-      a === 10 ||
-      a === 127 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168) ||
-      (a === 100 && b >= 64 && b <= 127)
-    ) {
-      return true;
-    }
-  }
-
-  if (
-    lower.startsWith('fc') ||
-    lower.startsWith('fd') ||
-    lower.startsWith('fe80:') ||
-    lower.startsWith('::ffff:127.') ||
-    lower.startsWith('::ffff:10.') ||
-    lower.startsWith('::ffff:192.168.') ||
-    lower.startsWith('::ffff:169.254.')
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-const BROWSER_USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 (LakerAI Academic Auditor)';
-
-async function verifyReachableImageUrl(candidateUrl: string): Promise<string | null> {
-  try {
-    const imgParsed = new URL(candidateUrl);
-    if (imgParsed.protocol !== 'http:' && imgParsed.protocol !== 'https:') {
-      return null;
-    }
-    if (isPrivateOrReservedHost(imgParsed.hostname)) {
-      return null;
-    }
-
-    const imgRes = await fetch(imgParsed.toString(), {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000),
-      redirect: 'follow',
-      headers: {
-        'User-Agent': BROWSER_USER_AGENT,
-        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-      },
-    });
-
-    if (!imgRes.ok) return null;
-
-    if (imgRes.url) {
-      const finalImgParsed = new URL(imgRes.url);
-      if (
-        (finalImgParsed.protocol !== 'http:' && finalImgParsed.protocol !== 'https:') ||
-        isPrivateOrReservedHost(finalImgParsed.hostname)
-      ) {
-        return null;
-      }
-    }
-
-    const contentType = (imgRes.headers.get('content-type') || '').toLowerCase();
-    if (!contentType.startsWith('image/')) {
-      return null;
-    }
-
-    return imgRes.url || imgParsed.toString();
-  } catch {
-    return null;
-  }
-}
+import { scrapeVendorWebsite } from '@/ai/utils/web-scraper';
 
 const ImageDiscoveryInput = z.object({
-  url: z.string().url().max(2048),
+  url: z
+    .string()
+    .url()
+    .max(2048)
+    .describe('The vendor URL to scan for verified OpenGraph or Twitter preview images.'),
 });
 
 /**
  * Server action to scrape official og:image or twitter:image and verify HTTP 200 image/* response.
- * Enforces SSRF and protocol validation on both the target page and the discovered image URL.
+ * Delegates to the unified SSRF-hardened `scrapeVendorWebsite` utility.
  */
 export async function findOfficialImage(input: z.infer<typeof ImageDiscoveryInput>) {
   try {
     const parsedInput = ImageDiscoveryInput.parse(input);
-    const parsed = new URL(parsedInput.url);
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      return { success: false, url: null, error: 'Unsupported URL protocol.' };
+    const scraped = await scrapeVendorWebsite(parsedInput.url);
+    if (scraped.imageUrl) {
+      return { success: true, url: scraped.imageUrl, error: null };
     }
-    if (isPrivateOrReservedHost(parsed.hostname)) {
-      return { success: false, url: null, error: 'Private or reserved hosts are not allowed.' };
-    }
-
-    const response = await fetch(parsed.toString(), {
-      signal: AbortSignal.timeout(6000),
-      redirect: 'follow',
-      headers: {
-        'User-Agent': BROWSER_USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    });
-    if (!response.ok) {
-      return { success: false, url: null, error: `Failed to fetch URL (HTTP ${response.status}).` };
-    }
-
-    const finalPageUrl = response.url || parsed.toString();
-    const finalParsed = new URL(finalPageUrl);
-    if (
-      (finalParsed.protocol !== 'http:' && finalParsed.protocol !== 'https:') ||
-      isPrivateOrReservedHost(finalParsed.hostname)
-    ) {
-      return { success: false, url: null, error: 'Redirected to disallowed host.' };
-    }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-    const rawCandidates = [
-      $('meta[property="og:image"]').attr('content'),
-      $('meta[property="og:image:secure_url"]').attr('content'),
-      $('meta[property="og:image:url"]').attr('content'),
-      $('meta[name="twitter:image"]').attr('content'),
-      $('meta[name="twitter:image:src"]').attr('content'),
-      $('link[rel="apple-touch-icon"]').attr('href'),
-    ].filter((c): c is string => Boolean(c && c.trim()));
-
-    for (const raw of rawCandidates) {
-      let resolved: string;
-      try {
-        resolved = new URL(raw.trim(), finalPageUrl).toString();
-      } catch {
-        continue;
-      }
-      const verified = await verifyReachableImageUrl(resolved);
-      if (verified) {
-        return { success: true, url: verified, error: null };
-      }
-    }
-
     return {
       success: false,
       url: null,
-      error: 'No reachable HTTP 200 Open Graph or Twitter image found on the site.',
+      error:
+        scraped.error || 'No reachable HTTP 200 Open Graph or Twitter image found on the site.',
     };
   } catch (err: any) {
     return { success: false, url: null, error: err.message || 'Error occurred while scanning.' };
@@ -171,32 +35,56 @@ export async function findOfficialImage(input: z.infer<typeof ImageDiscoveryInpu
 }
 
 const ImageGenerationInput = z.object({
-  toolTitle: z.string().trim().min(1).max(100),
-  toolCategory: z.string().trim().min(1).max(100),
-  toolDescription: z.string().trim().max(2000),
+  toolTitle: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .describe('The title of the AI tool.'),
+  toolCategory: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .describe('The academic category of the AI tool.'),
+  toolDescription: z
+    .string()
+    .trim()
+    .max(2000)
+    .describe('The description or pedagogical narrative of the AI tool.'),
 });
 
 const generateSvgPrompt = ai.definePrompt({
   name: 'generateSvgPrompt',
+  model: AI_MODELS.SYNTHESIS,
   input: { schema: ImageGenerationInput },
-  output: { schema: z.string() },
-  config: { temperature: 0.4 },
-  prompt: `You are an expert graphic designer.
-Your task is to generate a professional, sleek, flat-design SVG illustration representing a specific software tool.
-The SVG must be beautiful, modern, and use a harmonious color palette suitable for a professional directory.
-Do NOT use copyrighted logos. Create an abstract or metaphorical representation of the tool's purpose.
+  output: {
+    schema: z
+      .string()
+      .describe('Valid standalone <svg viewBox="0 0 800 450">...</svg> markup with no markdown fences.'),
+  },
+  config: { temperature: 0.3 },
+  prompt: `<system_role>
+You are the Principal Brand & Vector Illustrator for Grand Valley State University's LakerAI Directory.
+Generate a sleek, modern 16:9 SVG card illustration representing the specified academic AI tool.
+</system_role>
 
-Tool Title: {{{toolTitle}}}
-Category: {{{toolCategory}}}
-Description: {{{toolDescription}}}
+<brand_guidelines>
+- Primary Brand Palette: GVSU Laker Blue (#0032A0), Deep Midnight (#0F172A), Vibrant Laker Accent Purple (#601EE3), and Soft Ice Blue (#93C5FD).
+- Do NOT reproduce copyrighted vendor trademarks. Instead, combine geometric vector motifs, abstract neural/workflow nodes, and clean typography featuring the tool's title and category.
+</brand_guidelines>
 
-Requirements:
-1. Return ONLY the raw SVG code. Do not include markdown formatting like \`\`\`svg.
-2. The SVG must have a viewBox of "0 0 800 600".
-3. Use a modern, dark or rich background with vibrant accent elements.
-4. Keep it relatively simple but professional (e.g. geometric shapes, subtle gradients, nodes, abstract workflows).
-5. Ensure valid XML/SVG syntax.
-`,
+<tool_context>
+  <title>{{{toolTitle}}}</title>
+  <category>{{{toolCategory}}}</category>
+  <description>{{{toolDescription}}}</description>
+</tool_context>
+
+<svg_constraints>
+1. Return ONLY raw valid XML starting with <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450"> and ending with </svg>.
+2. Do NOT wrap the output in markdown code blocks.
+3. Ensure high contrast and visual polish suitable for a university directory card header.
+</svg_constraints>`,
 });
 
 function buildDeterministicSvg(title: string, category: string): string {
@@ -220,7 +108,7 @@ function buildDeterministicSvg(title: string, category: string): string {
 }
 
 /**
- * Server action to generate a professional SVG visual using Gemini, with deterministic SVG fallback.
+ * Server action to generate a professional SVG visual using Gemini 3 Flash, with deterministic SVG fallback.
  */
 export async function generateProfessionalImage(input: z.infer<typeof ImageGenerationInput>) {
   const parsedInput = ImageGenerationInput.parse(input);
@@ -240,7 +128,10 @@ export async function generateProfessionalImage(input: z.infer<typeof ImageGener
       }
     }
   } catch (err) {
-    console.warn('Gemini SVG generation unavailable; falling back to deterministic GVSU SVG template:', err);
+    console.warn(
+      'Gemini 3 SVG generation unavailable; falling back to deterministic GVSU SVG template:',
+      err
+    );
   }
 
   const fallbackSvg = buildDeterministicSvg(parsedInput.toolTitle, parsedInput.toolCategory);
