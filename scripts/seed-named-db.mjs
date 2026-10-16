@@ -849,12 +849,8 @@ const INITIAL_SEED_PROMPTS = [
   },
 ];
 
-function generateBrandLogos() {
-  const logosDir = path.join(process.cwd(), 'public', 'logos');
-  fs.mkdirSync(logosDir, { recursive: true });
-
-  for (const t of INITIAL_SEED_TOOLS) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+function buildToolSvg(t) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
   <defs>
     <linearGradient id="bg-${t.id}" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="${t.bg1}" />
@@ -885,9 +881,19 @@ function generateBrandLogos() {
   <text x="56" y="314" fill="#FFFFFF" font-family="Georgia, serif" font-size="50" font-weight="900">${t.title}</text>
   <text x="56" y="358" fill="#E2E8F0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="500" opacity="0.9">${t.vendor} • LakerAI Institutional Directory</text>
 </svg>`;
+}
+
+function generateBrandLogos() {
+  const logosDir = path.join(process.cwd(), 'public', 'logos');
+  fs.mkdirSync(logosDir, { recursive: true });
+
+  for (const t of INITIAL_SEED_TOOLS) {
+    const svg = buildToolSvg(t);
     fs.writeFileSync(path.join(logosDir, `${t.id}.svg`), svg, 'utf8');
+    t.ogImageUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    t.imageUrl = `/logos/${t.id}.svg`;
   }
-  console.log(`✔ Generated ${INITIAL_SEED_TOOLS.length} SVG brand logos in public/logos/`);
+  console.log(`✔ Generated ${INITIAL_SEED_TOOLS.length} SVG brand logos in public/logos/ and encoded inline SVG previews`);
 }
 
 function getFirebaseToolsAccessToken() {

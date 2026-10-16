@@ -118,13 +118,13 @@ test.describe('Full Real-Browser User Acceptance Test (UAT) Suite', () => {
     // Close assistant results dropdown
     await page.keyboard.press('Escape');
 
-    // Verify NewsGrid ("Higher Ed AI Intelligence") at the bottom of the page displays live articles
-    const newsHeading = page.getByText(/Higher Ed AI Intelligence/i);
+    // Verify NewsGrid ("TECH INTELLIGENCE: WORLD STAGE") at the bottom of the page displays live articles
+    const newsHeading = page.getByText(/TECH INTELLIGENCE: WORLD STAGE/i);
     await newsHeading.scrollIntoViewIfNeeded();
     await expect(newsHeading).toBeVisible({ timeout: 15000 });
-    const newsReadReportLinks = page.getByText(/Read Report/i);
-    await expect(newsReadReportLinks.first()).toBeVisible({ timeout: 15000 });
-    expect(await newsReadReportLinks.count()).toBeGreaterThanOrEqual(1);
+    const newsReadStoryLinks = page.getByText(/READ FULL STORY/i);
+    await expect(newsReadStoryLinks.first()).toBeVisible({ timeout: 15000 });
+    expect(await newsReadStoryLinks.count()).toBeGreaterThanOrEqual(4);
   });
 
   test('4. Prompt Library, Help & Support, Changelog, and Reporting/Submission Modals', async ({ page }) => {
@@ -166,7 +166,7 @@ test.describe('Full Real-Browser User Acceptance Test (UAT) Suite', () => {
 
     // 4d. ReportModal ("Report a Mistake") and SubmissionModal ("SUBMIT NEW TOOL") on homepage
     await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
-    const reportBtn = page.getByRole('button', { name: /Report a Mistake/i });
+    const reportBtn = page.getByRole('button', { name: /Report a Mistake/i }).first();
     await expect(reportBtn).toBeVisible({ timeout: 15000 });
     await reportBtn.click();
     await expect(page.getByRole('dialog')).toBeVisible();
