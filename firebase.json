@@ -1,5 +1,6 @@
 {
   "firestore": {
+    "database": "ai-studio-gvsulakeraidirec-b9840b1c-2365-40d8-a6ec-8d6b200bdbfb",
     "rules": "firestore.rules"
   },
   "apphosting": {

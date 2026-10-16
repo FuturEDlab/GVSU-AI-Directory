@@ -66,8 +66,9 @@ export async function getPublishedToolsSafe(): Promise<SimplifiedTool[]> {
   } catch (error) {
     console.warn("Firestore Admin failed or empty, attempting REST API fallback...");
     try {
-      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'studio-3913196954-d2b0d';
-      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/tools_published`;
+      const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gvsu-ai-directory';
+      const dbId = process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID || 'ai-studio-gvsulakeraidirec-b9840b1c-2365-40d8-a6ec-8d6b200bdbfb';
+      const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${dbId}/documents/tools_published`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.documents) {

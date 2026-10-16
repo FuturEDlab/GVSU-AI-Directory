@@ -57,6 +57,8 @@ export default function Home() {
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [fallbackTools, setFallbackTools] = useState<ToolSubmission[]>([]);
+  const seedTriggeredRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -66,19 +68,27 @@ export default function Home() {
     if (!firestore || !isAdmin || !user) return;
     setIsSeeding(true);
     try {
-      for (const seed of INITIAL_SEED_TOOLS) {
-        await setDoc(
-          doc(firestore, "tools_published", seed.id),
-          {
-            ...seed,
-            submitterEmail: user.email || "admin@gvsu.edu",
-            submitterId: user.uid,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            publishedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+      const res = await fetch("/api/seed", { method: "POST" });
+      if (res.ok) {
+        const payload = await res.json();
+        if (Array.isArray(payload.tools) && payload.tools.length > 0) {
+          setFallbackTools(payload.tools);
+        }
+      } else {
+        for (const seed of INITIAL_SEED_TOOLS) {
+          await setDoc(
+            doc(firestore, "tools_published", seed.id),
+            {
+              ...seed,
+              submitterEmail: user.email || "admin@gvsu.edu",
+              submitterId: user.uid,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              publishedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
       }
       toast({ title: "Seeds Planted", description: "20 baseline tools added to directory." });
     } catch (error) {
@@ -97,14 +107,51 @@ export default function Home() {
     );
   }, [firestore, visibleCount]);
 
-  const { data: allTools, isLoading } = useCollection<ToolSubmission>(toolsQuery);
+  const { data: allTools, isLoading, error } = useCollection<ToolSubmission>(toolsQuery);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (allTools && allTools.length > 0) return;
+    if (seedTriggeredRef.current) return;
+    seedTriggeredRef.current = true;
+
+    fetch("/api/seed")
+      .then((res) => res.json())
+      .then((payload) => {
+        if (Array.isArray(payload?.tools) && payload.tools.length > 0) {
+          setFallbackTools(payload.tools);
+        } else {
+          setFallbackTools(
+            INITIAL_SEED_TOOLS.map((t) => ({
+              ...t,
+              submitterEmail: "vanharkj@mail.gvsu.edu",
+              submitterId: "admin-seed",
+            })) as ToolSubmission[]
+          );
+        }
+      })
+      .catch(() => {
+        setFallbackTools(
+          INITIAL_SEED_TOOLS.map((t) => ({
+            ...t,
+            submitterEmail: "vanharkj@mail.gvsu.edu",
+            submitterId: "admin-seed",
+          })) as ToolSubmission[]
+        );
+      });
+  }, [allTools, isLoading, error]);
+
+  const effectiveTools = useMemo(() => {
+    if (allTools && allTools.length > 0) return allTools;
+    return fallbackTools;
+  }, [allTools, fallbackTools]);
 
   const categories = ["ALL TOOLS", ...TOOL_CATEGORIES];
 
   const filteredTools = useMemo(() => {
-    if (!allTools) return [];
+    if (!effectiveTools.length) return [];
     const queryLower = debouncedSearchQuery.toLowerCase();
-    return allTools
+    return effectiveTools
       .filter(tool => {
         const toolCat = (tool.category || "").toUpperCase();
         const activeCat = activeCategory.toUpperCase();
@@ -124,7 +171,7 @@ export default function Home() {
         return matchesCategory && matchesSearch && matchesTags;
       })
       .sort((a, b) => (b.publishedAt?.seconds || 0) - (a.publishedAt?.seconds || 0));
-  }, [allTools, activeCategory, debouncedSearchQuery, selectedTags]);
+  }, [effectiveTools, activeCategory, debouncedSearchQuery, selectedTags]);
 
   if (!mounted) return null;
 

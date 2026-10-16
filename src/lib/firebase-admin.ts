@@ -13,5 +13,9 @@ if (!getApps().length) {
   }
 }
 
-export const adminDb = getFirestore();
+const FIRESTORE_DATABASE_ID =
+  process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID ||
+  'ai-studio-gvsulakeraidirec-b9840b1c-2365-40d8-a6ec-8d6b200bdbfb';
+
+export const adminDb = getFirestore(FIRESTORE_DATABASE_ID);
 export const adminAuth = getAuth();
