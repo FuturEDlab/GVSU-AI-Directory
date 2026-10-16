@@ -7,6 +7,13 @@ runConfig:
   maxInstances: 1
 
 env:
-  - variable: GEMINI_API_KEY
-    secret: gemini-api-key
-
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: gvsu-ai-directory
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID
+    value: ai-studio-gvsulakeraidirec-b9840b1c-2365-40d8-a6ec-8d6b200bdbfb
+    availability:
+      - BUILD
+      - RUNTIME
