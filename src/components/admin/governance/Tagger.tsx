@@ -14,8 +14,7 @@ interface TaggerProps {
 }
 
 export function Tagger({ tags, onChange }: TaggerProps) {
-  const { user } = useAuth();
-  const isAdmin = user?.email === "indrajis@mail.gvsu.edu";
+  const { isAdmin } = useAuth();
 
   const handleToggle = (category: keyof ToolTags, option: string) => {
     const current = tags[category] || [];

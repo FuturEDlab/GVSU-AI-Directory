@@ -17,7 +17,13 @@ import {
   deleteDoc,
   addDoc
 } from "firebase/firestore";
-import { ToolSubmission, ToolTags } from "@/app/lib/tool-types";
+import {
+  ToolSubmission,
+  ToolTags,
+  ToolReportCard,
+  ReportCardItem,
+  ToolStatus
+} from "@/app/lib/tool-types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,7 +37,11 @@ import {
   Bot,
   X,
   Search,
-  Activity
+  Activity,
+  ShieldCheck,
+  AlertTriangle,
+  ShieldAlert,
+  Sparkles
 } from "lucide-react";
 import { useGovernanceHub } from "@/hooks/use-governance-hub";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,11 +61,111 @@ const INITIAL_TAGS: ToolTags = {
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
-interface ReportCardEntry {
+export const CANONICAL_PILLARS = [
+  {
+    key: "security_privacy" as const,
+    legacyKey: "security" as const,
+    label: "Security & Privacy"
+  },
+  {
+    key: "pedagogical_value" as const,
+    legacyKey: "pedagogy" as const,
+    label: "Pedagogical Value"
+  },
+  {
+    key: "ethics_stewardship" as const,
+    legacyKey: "ethics" as const,
+    label: "Ethics & Stewardship"
+  },
+  {
+    key: "access_cost" as const,
+    legacyKey: "readiness" as const,
+    label: "Access & Cost"
+  }
+];
+
+export interface NormalizedPillarEntry {
+  key: "security_privacy" | "pedagogical_value" | "ethics_stewardship" | "access_cost";
+  label: string;
   score: number;
   summary: string;
 }
-type ReportCard = Record<string, ReportCardEntry>;
+
+export function normalizeReportCard(
+  raw?: Partial<ToolReportCard> | Record<string, any> | null
+): {
+  pillars: NormalizedPillarEntry[];
+  canonical: ToolReportCard | undefined;
+  avgScore: number | null;
+  riskRating: "Low Risk" | "Moderate Risk" | "High Risk";
+} {
+  if (!raw || typeof raw !== "object") {
+    return {
+      pillars: [],
+      canonical: undefined,
+      avgScore: null,
+      riskRating: "Moderate Risk"
+    };
+  }
+
+  const pillars: NormalizedPillarEntry[] = [];
+  for (const pillar of CANONICAL_PILLARS) {
+    const entry: ReportCardItem | undefined =
+      (raw as any)[pillar.key] || (raw as any)[pillar.legacyKey];
+    if (entry && typeof entry.score === "number") {
+      pillars.push({
+        key: pillar.key,
+        label: pillar.label,
+        score: entry.score,
+        summary: entry.summary || ""
+      });
+    }
+  }
+
+  if (pillars.length === 0) {
+    return {
+      pillars: [],
+      canonical: undefined,
+      avgScore: null,
+      riskRating: "Moderate Risk"
+    };
+  }
+
+  const avg = pillars.reduce((sum, p) => sum + p.score, 0) / pillars.length;
+  const avgScore = Math.round(avg * 10) / 10;
+  const riskRating: "Low Risk" | "Moderate Risk" | "High Risk" =
+    avg >= 4.0 ? "Low Risk" : avg >= 2.8 ? "Moderate Risk" : "High Risk";
+
+  const byKey = Object.fromEntries(pillars.map((p) => [p.key, { score: p.score, summary: p.summary }]));
+  const canonical: ToolReportCard = {
+    security_privacy: byKey.security_privacy || { score: 4, summary: "" },
+    pedagogical_value: byKey.pedagogical_value || { score: 4, summary: "" },
+    ethics_stewardship: byKey.ethics_stewardship || { score: 4, summary: "" },
+    access_cost: byKey.access_cost || { score: 4, summary: "" }
+  };
+
+  return { pillars, canonical, avgScore, riskRating };
+}
+
+function mergeToolTags(current: ToolTags, recommended?: Partial<ToolTags> | null): ToolTags {
+  const uniq = (a: string[] = [], b: string[] = []) => Array.from(new Set([...a, ...b]));
+  return {
+    security_privacy: uniq(current?.security_privacy, recommended?.security_privacy),
+    ethics_stewardship: uniq(current?.ethics_stewardship, recommended?.ethics_stewardship),
+    pedagogical_value: uniq(current?.pedagogical_value, recommended?.pedagogical_value),
+    institutional_status: uniq(
+      current?.institutional_status?.length ? current.institutional_status : ["Community Discovery"],
+      recommended?.institutional_status
+    ),
+    access_cost: uniq(current?.access_cost, recommended?.access_cost)
+  };
+}
+
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== undefined)
+  );
+}
 
 interface ToolModerationTabProps {
   initialSelectToolId?: string | null;
@@ -67,10 +177,18 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
   const { toast } = useToast();
   const gov = useGovernanceHub();
 
-  const [activeTool, setActiveTool] = useState<ToolSubmission | null>(null);
+  const [selectedTool, setSelectedTool] = useState<ToolSubmission | null>(null);
+  const activeTool = selectedTool;
+  const setActiveTool = setSelectedTool;
+
   const [moderationTab, setModerationTab] = useState<string>("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVetting, setIsVetting] = useState(false);
+  const [auditStageMessage, setAuditStageMessage] = useState<string>(
+    "Scraping vendor metadata & running Gemini 3.1 Pro 4-Pillar Audit..."
+  );
+  const [auditSuccessMessage, setAuditSuccessMessage] = useState<string | null>(null);
+  const [auditError, setAuditError] = useState<string | null>(null);
   const [isSearchingImage, setIsSearchingImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isBulkSyncing, setIsBulkSyncing] = useState(false);
@@ -136,7 +254,7 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
   }, [initialSelectToolId, submittedTools, publishedTools]);
 
   const handleSelectTool = (tool: ToolSubmission) => {
-    setActiveTool(tool);
+    setSelectedTool(tool);
     setDraftTitle(tool.title || "");
     setDraftCategory(tool.category || "");
     setDraftUrl(tool.toolUrl || "");
@@ -144,35 +262,124 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
     setDraftImage(tool.ogImageUrl || "");
     setDraftTags(tool.tags || INITIAL_TAGS);
     setDiscoveredImage(null);
+    setAuditError(null);
+    const hasCompletedAudit =
+      Boolean(tool.aiVetted) ||
+      tool.status === "Audited - Ready for Approval" ||
+      tool.status === "Review" ||
+      Boolean(tool.reportCard);
+    setAuditSuccessMessage(
+      hasCompletedAudit && tool.status !== "Published"
+        ? "AI Audit Complete: 4-Pillar Scorecard & Narrative generated. Review below and click 'Approve & Publish' to push live."
+        : null
+    );
   };
 
   const handleRunVettingAgent = async () => {
-    if (!activeTool) return;
+    if (!selectedTool) return;
     setIsVetting(true);
+    setAuditError(null);
+    setAuditSuccessMessage(null);
+    setAuditStageMessage("Scraping vendor metadata & running Gemini 3.1 Pro 4-Pillar Audit...");
+
+    const stageTimer = setTimeout(() => {
+      setAuditStageMessage(
+        "Evaluating FERPA, Pedagogy, Ethics & Access pillars with Gemini 3.1 Pro..."
+      );
+    }, 3000);
+
     try {
-      // Dynamic import to keep main bundle lean
       const { automatedVettingAgent } = await import("@/ai/flows/admin-generates-tool-narrative-and-image");
       const result = await automatedVettingAgent({
-        toolTitle: draftTitle,
-        toolDescription: activeTool.initialDescription,
-        toolUrl: draftUrl,
-        adminEmail: user?.email || undefined,
+        toolTitle: (draftTitle || selectedTool.title || "").trim(),
+        toolDescription: (
+          selectedTool.initialDescription ||
+          draftNarrative ||
+          selectedTool.pedagogicalNarrative ||
+          draftTitle ||
+          selectedTool.title
+        ).trim(),
+        toolUrl: (draftUrl || selectedTool.toolUrl || "").trim(),
+        adminEmail: user?.email?.trim().toLowerCase() || undefined,
+        isAdmin: Boolean(isAdmin),
       });
 
-      setDraftNarrative(result.pedagogicalNarrative);
-      if (result.scrapedOgImage) setDraftImage(result.scrapedOgImage);
+      clearTimeout(stageTimer);
 
-      setActiveTool(prev => prev ? {
-        ...prev,
+      const { canonical: canonicalReportCard } = normalizeReportCard(result.reportCard);
+      const nextReportCard = canonicalReportCard || result.reportCard;
+      const nextImage = result.scrapedOgImage || result.ogImageUrl || draftImage || selectedTool.ogImageUrl || "";
+      const nextTags = mergeToolTags(draftTags, result.tags);
+      const isPublished = publishedTools?.some(t => t.id === selectedTool.id);
+      const nextStatus: ToolStatus = isPublished ? "Published" : "Audited - Ready for Approval";
+
+      const updatedTool: ToolSubmission = {
+        ...selectedTool,
+        title: draftTitle || selectedTool.title,
+        category: draftCategory || selectedTool.category,
+        toolUrl: draftUrl || selectedTool.toolUrl,
+        pedagogicalNarrative: result.pedagogicalNarrative,
+        ogImageUrl: nextImage,
+        tags: nextTags,
         aiVetted: true,
-        reportCard: result.reportCard,
-        overallVerdict: result.overallVerdict
-      } : null);
+        reportCard: nextReportCard,
+        overallVerdict: result.overallVerdict,
+        status: nextStatus,
+        updatedAt: new Date(),
+      };
 
-      toast({ title: "Vetting Complete", description: "Audit dimension scores generated." });
-    } catch (error) {
+      // Update local React state immediately so the inspector drawer reflects the audit right away
+      setDraftNarrative(result.pedagogicalNarrative);
+      if (nextImage) setDraftImage(nextImage);
+      setDraftTags(nextTags);
+      setSelectedTool(updatedTool);
+
+      // Persist audit results to Firestore so they survive reloads and tab switches
+      if (firestore && selectedTool.id) {
+        setAuditStageMessage("Saving 4-Pillar Scorecard & Narrative to Firestore...");
+        const targetCollection = isPublished ? "tools_published" : "tools_submitted";
+        const targetRef = doc(firestore, targetCollection, selectedTool.id);
+        await setDoc(
+          targetRef,
+          sanitizeForFirestore({
+            title: updatedTool.title,
+            category: updatedTool.category,
+            toolUrl: updatedTool.toolUrl,
+            pedagogicalNarrative: result.pedagogicalNarrative,
+            ogImageUrl: nextImage || null,
+            tags: nextTags,
+            aiVetted: true,
+            reportCard: nextReportCard,
+            overallVerdict: result.overallVerdict,
+            status: nextStatus,
+            updatedAt: new Date(),
+          }),
+          { merge: true }
+        );
+      }
+
+      const completionMsg =
+        "AI Audit Complete: 4-Pillar Scorecard & Narrative generated. Review below and click 'Approve & Publish' to push live.";
+      setAuditSuccessMessage(completionMsg);
+      toast({
+        title: "AI Audit Complete",
+        description: "4-Pillar Scorecard & Narrative generated. Review below and click 'Approve & Publish' to push live.",
+      });
+    } catch (error: any) {
+      clearTimeout(stageTimer);
       console.error("Vetting agent failed:", error);
-      toast({ variant: "destructive", title: "Agent Failure", description: "Could not complete the automated audit. Try again." });
+      const errorReason =
+        error instanceof Error && error.message
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "Could not complete the automated audit.";
+      setAuditError(errorReason);
+      toast({
+        variant: "destructive",
+        title: "AI Audit Failed",
+        description: errorReason,
+      });
     } finally {
       setIsVetting(false);
     }
@@ -267,22 +474,28 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
       const isPublished = publishedTools?.some(t => t.id === activeTool.id);
       const sourceCollection = isPublished ? "tools_published" : "tools_submitted";
 
-      const updatedTool = {
+      const updatedTool: ToolSubmission = {
         ...activeTool,
         title: draftTitle,
         category: draftCategory,
         toolUrl: draftUrl,
         pedagogicalNarrative: draftNarrative,
         ogImageUrl: draftImage,
-        tags: draftTags
+        tags: draftTags,
+        aiVetted: activeTool.aiVetted ?? true,
       };
 
       await gov.publishTool(updatedTool, draftNarrative, draftImage, draftTags, sourceCollection);
-      toast({ title: "Tool Verified", description: "Changes are live." });
+      toast({
+        title: "Tool Approved & Published",
+        description: `${draftTitle || activeTool.title} is now live in the GVSU AI Directory.`
+      });
+      setAuditSuccessMessage(null);
       setActiveTool(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Save & publish failed:", error);
-      toast({ variant: "destructive", title: "Action Failed", description: "Could not save changes. Try again." });
+      const errMsg = error instanceof Error ? error.message : "Could not publish tool. Try again.";
+      toast({ variant: "destructive", title: "Publish Failed", description: errMsg });
     } finally {
       setIsProcessing(false);
     }
@@ -315,10 +528,10 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
       }
 
       const subRef = doc(firestore, "tools_submitted", toolId);
-      await setDoc(subRef, {
+      await setDoc(subRef, sanitizeForFirestore({
         ...updatedTool,
         updatedAt: new Date()
-      }, { merge: true });
+      }), { merge: true });
 
       if (submitterEmail) {
         await addDoc(collection(firestore, "mail"), {
@@ -383,8 +596,31 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
   };
 
   const avatarInitial = draftTitle.trim().charAt(0).toUpperCase() || "?";
-  const reportCard = activeTool?.reportCard as ReportCard | undefined;
+  const normalizedScorecard = useMemo(
+    () => normalizeReportCard(activeTool?.reportCard),
+    [activeTool?.reportCard]
+  );
+  const hasScorecard = normalizedScorecard.pillars.length > 0;
+  const isAuditedReady =
+    Boolean(activeTool?.aiVetted) ||
+    activeTool?.status === "Audited - Ready for Approval" ||
+    activeTool?.status === "Review" ||
+    hasScorecard;
   const isToolsLoading = submittedLoading || publishedLoading;
+
+  const getHeaderStatusLabel = (tool: ToolSubmission) => {
+    if (tool.status === "Published") return "LIVE ON HUB";
+    if (tool.status === "Rejected") return "REJECTED";
+    if (
+      tool.aiVetted ||
+      tool.status === "Audited - Ready for Approval" ||
+      tool.status === "Review" ||
+      Boolean(tool.reportCard)
+    ) {
+      return "AUDITED - READY FOR APPROVAL";
+    }
+    return "STAGING QUEUE";
+  };
 
   return (
     <div className="flex-1 flex gap-8 min-h-0">
@@ -430,21 +666,41 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
                     No pending tools to review.
                   </div>
                 ) : (
-                  pendingTools.map((tool) => (
-                    <button
-                      key={tool.id}
-                      onClick={() => handleSelectTool(tool)}
-                      className={cn(
-                        "w-full text-left p-5 rounded-2xl border transition-all group",
-                        activeTool?.id === tool.id
-                          ? "bg-white border-gvsuBlue shadow-md ring-1 ring-gvsuBlue/10"
-                          : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
-                      )}
-                    >
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">{tool.category}</span>
-                      <h4 className="font-bold text-slate-900 group-hover:text-gvsuBlue">{tool.title}</h4>
-                    </button>
-                  ))
+                  pendingTools.map((tool) => {
+                    const toolAudited =
+                      Boolean(tool.aiVetted) ||
+                      tool.status === "Audited - Ready for Approval" ||
+                      tool.status === "Review" ||
+                      Boolean(tool.reportCard);
+                    return (
+                      <button
+                        key={tool.id}
+                        onClick={() => handleSelectTool(tool)}
+                        className={cn(
+                          "w-full text-left p-5 rounded-2xl border transition-all group",
+                          activeTool?.id === tool.id
+                            ? "bg-white border-gvsuBlue shadow-md ring-1 ring-gvsuBlue/10"
+                            : "bg-white border-slate-200 hover:border-slate-300 shadow-sm"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{tool.category}</span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[8px] font-bold uppercase border-none px-2 py-0.5",
+                              toolAudited
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-amber-100 text-amber-800"
+                            )}
+                          >
+                            {toolAudited ? "Audited - Ready" : "Needs Audit"}
+                          </Badge>
+                        </div>
+                        <h4 className="font-bold text-slate-900 group-hover:text-gvsuBlue">{tool.title}</h4>
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
@@ -525,7 +781,7 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
       <section className="flex-1 flex flex-col min-h-0">
         {activeTool ? (
           <div className="bg-white border border-slate-200 rounded-3xl flex flex-col flex-1 overflow-hidden shadow-xl">
-            <header className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+            <header className="p-6 sm:p-8 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-gvsuBlue rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg overflow-hidden shrink-0">
                   {draftImage ? (
@@ -536,23 +792,61 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
                 </div>
                 <div>
                   <h3 className="font-bold text-xl text-slate-900">{draftTitle || "Reviewing App"}</h3>
-                  <Badge variant="outline" className={cn(
-                    "text-[9px] font-bold uppercase mt-1 border-none px-2 py-0.5",
-                    activeTool.status === "Published" && "bg-green-100 text-green-700 hover:bg-green-100",
-                    activeTool.status === "Rejected" && "bg-red-100 text-red-700 hover:bg-red-100",
-                    activeTool.status !== "Published" && activeTool.status !== "Rejected" && "bg-amber-100 text-amber-700 hover:bg-amber-100"
-                  )}>
-                    {activeTool.status === "Published" ? "LIVE ON HUB" : activeTool.status === "Rejected" ? "REJECTED" : "STAGING QUEUE"}
-                  </Badge>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <Badge
+                      variant="outline"
+                      data-testid="moderation-status-badge"
+                      className={cn(
+                        "text-[9px] font-bold uppercase border-none px-2.5 py-0.5",
+                        activeTool.status === "Published" && "bg-green-100 text-green-700 hover:bg-green-100",
+                        activeTool.status === "Rejected" && "bg-red-100 text-red-700 hover:bg-red-100",
+                        activeTool.status !== "Published" &&
+                          activeTool.status !== "Rejected" &&
+                          isAuditedReady &&
+                          "bg-emerald-100 text-emerald-800 hover:bg-emerald-100",
+                        activeTool.status !== "Published" &&
+                          activeTool.status !== "Rejected" &&
+                          !isAuditedReady &&
+                          "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                      )}
+                    >
+                      {getHeaderStatusLabel(activeTool)}
+                    </Badge>
+                    {hasScorecard && (
+                      <Badge
+                        variant="outline"
+                        data-testid="moderation-risk-badge"
+                        className={cn(
+                          "text-[9px] font-bold uppercase px-2 py-0.5 flex items-center gap-1",
+                          normalizedScorecard.riskRating === "Low Risk" &&
+                            "bg-bigLake/20 text-midnight border-bigLake/60",
+                          normalizedScorecard.riskRating === "Moderate Risk" &&
+                            "bg-archway/30 text-[#5C3A21] border-archway",
+                          normalizedScorecard.riskRating === "High Risk" &&
+                            "bg-carillonBrick text-white border-carillonBrick"
+                        )}
+                      >
+                        {normalizedScorecard.riskRating === "Low Risk" ? (
+                          <ShieldCheck className="w-3 h-3 text-gvsuBlue" />
+                        ) : normalizedScorecard.riskRating === "Moderate Risk" ? (
+                          <AlertTriangle className="w-3 h-3 text-carillonBrick" />
+                        ) : (
+                          <ShieldAlert className="w-3 h-3" />
+                        )}
+                        {normalizedScorecard.riskRating}
+                        {normalizedScorecard.avgScore !== null && ` (${normalizedScorecard.avgScore}/5.0)`}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-[10px] tracking-widest uppercase h-10 rounded-xl px-4"
                   onClick={handleRejectTool}
-                  disabled={isProcessing}
+                  disabled={isProcessing || isVetting}
                 >
                   {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-3.5 h-3.5 mr-2" />}
                   REJECT
@@ -560,26 +854,219 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-gvsuBlue border-gvsuBlue font-bold text-[10px] tracking-widest uppercase hover:bg-gvsuBlue hover:text-white"
+                  data-testid="run-audit-button"
+                  className="text-gvsuBlue border-gvsuBlue font-bold text-[10px] tracking-widest uppercase hover:bg-gvsuBlue hover:text-white h-10 rounded-xl px-4"
                   onClick={handleRunVettingAgent}
-                  disabled={isVetting}
+                  disabled={isVetting || isProcessing}
                 >
-                  {isVetting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : <Bot className="w-3.5 h-3.5 mr-2" />}
-                  RUN AUDIT
+                  {isVetting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
+                      RUNNING 4-PILLAR AUDIT...
+                    </>
+                  ) : (
+                    <>
+                      <Bot className="w-3.5 h-3.5 mr-2" />
+                      RUN AUDIT
+                    </>
+                  )}
                 </Button>
                 <Button
-                  className="bg-gvsuBlue hover:bg-midnight text-white font-bold text-[10px] tracking-widest uppercase px-6 h-10 rounded-xl shadow-lg"
+                  data-testid="approve-publish-button"
+                  className={cn(
+                    "font-bold text-[10px] tracking-widest uppercase px-6 h-10 rounded-xl shadow-lg transition-all",
+                    isAuditedReady && activeTool.status !== "Published"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400/50"
+                      : "bg-gvsuBlue hover:bg-midnight text-white"
+                  )}
                   onClick={handleSaveAndPublish}
-                  disabled={isProcessing}
+                  disabled={isProcessing || isVetting}
                 >
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-2" />}
-                  VERIFY & SAVE
+                  {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-2" />
+                  )}
+                  APPROVE &amp; PUBLISH
                 </Button>
               </div>
             </header>
 
+            {/* Live Audit Progress / Completion / Error Status Banner */}
+            {isVetting && (
+              <div
+                role="status"
+                aria-live="polite"
+                data-testid="audit-progress-banner"
+                className="px-8 py-4 bg-gvsuBlue/10 border-b border-gvsuBlue/20 flex items-center justify-between gap-4 shrink-0"
+              >
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-gvsuBlue animate-spin shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-gvsuBlue uppercase tracking-wider">
+                      Scraping vendor metadata &amp; running Gemini 3.1 Pro 4-Pillar Audit...
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">{auditStageMessage}</p>
+                  </div>
+                </div>
+                <Badge className="bg-gvsuBlue text-white border-none text-[9px] uppercase tracking-widest shrink-0">
+                  In Progress
+                </Badge>
+              </div>
+            )}
+
+            {!isVetting && auditError && (
+              <div
+                role="alert"
+                data-testid="audit-error-banner"
+                className="px-8 py-4 bg-red-50 border-b border-red-200 flex items-center justify-between gap-4 shrink-0"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-red-800 uppercase tracking-wider">
+                      Automated Audit Failed
+                    </p>
+                    <p className="text-xs text-red-700 mt-0.5">{auditError}</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-[9px] uppercase tracking-wider border-red-300 text-red-700 hover:bg-red-100"
+                  onClick={() => setAuditError(null)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            )}
+
+            {!isVetting && !auditError && (auditSuccessMessage || (isAuditedReady && activeTool.status !== "Published")) && (
+              <div
+                role="status"
+                aria-live="polite"
+                data-testid="audit-complete-banner"
+                className="px-8 py-4 bg-emerald-50 border-b border-emerald-200 flex flex-wrap items-center justify-between gap-4 shrink-0"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-5 h-5 text-emerald-700 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-emerald-900">
+                      {auditSuccessMessage ||
+                        "AI Audit Complete: 4-Pillar Scorecard & Narrative generated. Review below and click 'Approve & Publish' to push live."}
+                    </p>
+                    <p className="text-[11px] text-emerald-700 mt-0.5">
+                      Status: <span className="font-bold">Audited - Ready for Approval</span> &bull; Saved to Firestore staging queue.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleSaveAndPublish}
+                  disabled={isProcessing}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] tracking-widest uppercase h-8 px-4 rounded-lg shrink-0"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                  Approve &amp; Publish Now
+                </Button>
+              </div>
+            )}
+
             <ScrollArea className="flex-1 p-8">
               <div className="max-w-2xl space-y-10">
+                {/* 4-Pillar Institutional Vetting Scorecard placed at the top of the inspector so it is immediately visible */}
+                {hasScorecard && (
+                  <div
+                    data-testid="moderation-scorecard"
+                    className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-6 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <Bot className="w-4 h-4 text-gvsuBlue" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gvsuBlue">
+                          4-Pillar Institutional Vetting Scorecard
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {normalizedScorecard.avgScore !== null && (
+                          <Badge className="bg-gvsuBlue text-white border-none text-[10px] font-bold">
+                            Avg Score: {normalizedScorecard.avgScore}/5.0
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-[10px] font-bold uppercase",
+                            normalizedScorecard.riskRating === "Low Risk" &&
+                              "bg-bigLake/20 text-midnight border-bigLake/60",
+                            normalizedScorecard.riskRating === "Moderate Risk" &&
+                              "bg-archway/30 text-[#5C3A21] border-archway",
+                            normalizedScorecard.riskRating === "High Risk" &&
+                              "bg-carillonBrick text-white border-carillonBrick"
+                          )}
+                        >
+                          {normalizedScorecard.riskRating}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {normalizedScorecard.pillars.map((pillar) => {
+                        const pct = Math.min(100, Math.max(0, (pillar.score / 5) * 100));
+                        return (
+                          <div
+                            key={pillar.key}
+                            data-testid={`scorecard-pillar-${pillar.key}`}
+                            className="p-4 bg-white rounded-xl border border-slate-200/80 space-y-2"
+                          >
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-800">
+                                {pillar.label}
+                              </span>
+                              <Badge className="bg-gvsuBlue/10 text-gvsuBlue border-none text-[10px] font-bold">
+                                {pillar.score}/5
+                              </Badge>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full",
+                                                                    pillar.score >= 4
+                                    ? "bg-gvsuBlue"
+                                    : pillar.score >= 3
+                                    ? "bg-archway"
+                                    : "bg-carillonBrick"
+                                )}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed">{pillar.summary}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {activeTool.overallVerdict && (
+                      <div className="pt-4 border-t border-slate-200">
+                        <p className="text-xs font-bold text-slate-900">
+                          Institutional Verdict:{" "}
+                          <span className="font-normal text-slate-700">{activeTool.overallVerdict}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-gvsuBlue uppercase tracking-widest">
+                    Academic &amp; FERPA Narrative
+                  </label>
+                  <Textarea
+                    data-testid="moderation-narrative-input"
+                    value={draftNarrative}
+                    onChange={(e) => setDraftNarrative(e.target.value)}
+                    className="min-h-[120px] border-slate-200 rounded-2xl leading-relaxed text-sm p-5"
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">App Name</label>
@@ -595,40 +1082,6 @@ export function ToolModerationTab({ initialSelectToolId }: ToolModerationTabProp
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Institutional Link</label>
                   <Input value={draftUrl} onChange={(e) => setDraftUrl(e.target.value)} className="h-12 border-slate-200 rounded-xl font-medium" />
                 </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-bold text-gvsuBlue uppercase tracking-widest">Academic Narrative</label>
-                  <Textarea
-                    value={draftNarrative}
-                    onChange={(e) => setDraftNarrative(e.target.value)}
-                    className="min-h-[120px] border-slate-200 rounded-2xl leading-relaxed text-sm p-5"
-                  />
-                </div>
-
-                {reportCard && (
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Bot className="w-4 h-4 text-gvsuBlue" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-gvsuBlue">Institutional Vetting Scorecard</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-6">
-                      {Object.entries(reportCard).map(([key, data]) => (
-                        <div key={key} className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{key.replace(/_/g, ' ')}</span>
-                            <Badge className="bg-gvsuBlue/10 text-gvsuBlue border-none text-[8px]">{data.score}/5</Badge>
-                          </div>
-                          <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">{data.summary}</p>
-                        </div>
-                      ))}
-                    </div>
-                    {activeTool.overallVerdict && (
-                      <div className="pt-4 border-t border-slate-200">
-                        <p className="text-[11px] font-bold text-slate-900">Verdict: <span className="font-normal text-slate-600">{activeTool.overallVerdict}</span></p>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 <div className="space-y-5 pt-6 border-t border-slate-200">
                   <div className="flex justify-between items-end">

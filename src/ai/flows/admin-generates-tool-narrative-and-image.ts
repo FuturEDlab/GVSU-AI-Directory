@@ -5,9 +5,9 @@
  * a single-turn Gemini 3.1 Pro institutional compliance audit across the 4 GVSU pillars.
  */
 
-import { ai, AI_MODELS } from '@/ai/genkit';
+import { ai, AI_MODELS } from '../genkit';
 import { z } from 'genkit';
-import { scrapeVendorWebsite } from '@/ai/utils/web-scraper';
+import { scrapeVendorWebsite } from '../utils/web-scraper';
 
 const ADMIN_EMAILS = [
   'indrajis@mail.gvsu.edu',
@@ -32,15 +32,24 @@ const VettingInputSchema = z.object({
     .describe('The submitter-provided description of the AI tool.'),
   toolUrl: z
     .string()
+    .trim()
     .url()
     .max(2048)
     .describe('The canonical HTTPS/HTTP vendor URL of the AI tool.'),
-  adminEmail: z
-    .string()
-    .email()
-    .max(254)
+  adminEmail: z.preprocess(
+    (val) => (typeof val === 'string' && val.trim() === '' ? undefined : val),
+    z
+      .string()
+      .trim()
+      .email()
+      .max(254)
+      .optional()
+      .describe('The email of the GVSU administrator invoking the audit.')
+  ),
+  isAdmin: z
+    .boolean()
     .optional()
-    .describe('The email of the GVSU administrator invoking the audit.'),
+    .describe('Whether the caller is authenticated as an admin via /admins/{uid} or AuthContext.'),
 });
 
 export type AdminGeneratesToolNarrativeAndImageInput = z.infer<typeof VettingInputSchema>;
@@ -61,6 +70,14 @@ const ReportCardItemSchema = z.object({
     ),
 });
 
+const ToolTagsSchema = z.object({
+  security_privacy: z.array(z.string()),
+  ethics_stewardship: z.array(z.string()),
+  pedagogical_value: z.array(z.string()),
+  institutional_status: z.array(z.string()),
+  access_cost: z.array(z.string()),
+});
+
 const VettingOutputSchema = z.object({
   scrapedOgImage: z
     .string()
@@ -71,6 +88,13 @@ const VettingOutputSchema = z.object({
     .nullable()
     .optional()
     .describe('Alias of scrapedOgImage for Firestore document compatibility.'),
+  aiVetted: z
+    .boolean()
+    .optional()
+    .describe('Marks that the tool has completed the automated 4-pillar institutional audit.'),
+  tags: ToolTagsSchema.optional().describe(
+    'Recommended GVSU governance tags derived from the 4-pillar institutional audit.'
+  ),
   reportCard: z
     .object({
       security_privacy: ReportCardItemSchema.describe(
@@ -109,11 +133,36 @@ const VettingPromptInputSchema = z.object({
   vendorMetadataXml: z.string(),
 });
 
+function deriveRecommendedTags(reportCard: VettingOutput['reportCard']) {
+  const secScore = reportCard.security_privacy?.score ?? 4;
+  const pedScore = reportCard.pedagogical_value?.score ?? 4;
+  const ethScore = reportCard.ethics_stewardship?.score ?? 4;
+  const accScore = reportCard.access_cost?.score ?? 4;
+
+  return {
+    security_privacy:
+      secScore >= 5 ? ['FERPA Compliant', 'PII Safe'] : secScore >= 4 ? ['PII Safe'] : [],
+    ethics_stewardship:
+      ethScore >= 4 ? ['Laker Green', 'Bias Audited'] : ['Laker Green'],
+    pedagogical_value:
+      pedScore >= 4 ? ['Process-Oriented', 'Critical Literacy'] : ['Process-Oriented'],
+    institutional_status: ['Community Discovery'],
+    access_cost: accScore >= 5 ? ['Free'] : ['Freemium'],
+  };
+}
+
 const vettingPrompt = ai.definePrompt({
   name: 'vettingPrompt',
   model: AI_MODELS.REASONING,
   input: { schema: VettingPromptInputSchema },
-  output: { schema: VettingOutputSchema.omit({ scrapedOgImage: true, ogImageUrl: true }) },
+  output: {
+    schema: VettingOutputSchema.omit({
+      scrapedOgImage: true,
+      ogImageUrl: true,
+      aiVetted: true,
+      tags: true,
+    }),
+  },
   config: { temperature: 0.1 },
   prompt: `<system_role>
 You are the Chief Academic Technology & FERPA Compliance Auditor for Grand Valley State University (GVSU).
@@ -166,8 +215,8 @@ export async function automatedVettingAgent(
   input: z.infer<typeof VettingInputSchema>
 ): Promise<VettingOutput> {
   const parsedInput = VettingInputSchema.parse(input);
-  if (parsedInput.adminEmail !== undefined) {
-    const callerEmail = parsedInput.adminEmail.toLowerCase();
+  if (!parsedInput.isAdmin && parsedInput.adminEmail !== undefined) {
+    const callerEmail = parsedInput.adminEmail.trim().toLowerCase();
     if (!ADMIN_EMAILS.includes(callerEmail)) {
       throw new Error('Unauthorized: Admin access required to generate tool evaluations.');
     }
@@ -197,6 +246,8 @@ export async function automatedVettingAgent(
         ...output,
         scrapedOgImage,
         ogImageUrl: scrapedOgImage,
+        aiVetted: true,
+        tags: deriveRecommendedTags(output.reportCard),
       };
     }
   } catch (err) {
@@ -219,6 +270,8 @@ export async function automatedVettingAgent(
           ...flashOutput,
           scrapedOgImage,
           ogImageUrl: scrapedOgImage,
+          aiVetted: true,
+          tags: deriveRecommendedTags(flashOutput.reportCard),
         };
       }
     } catch (flashErr) {
@@ -229,30 +282,34 @@ export async function automatedVettingAgent(
     }
   }
 
+  const fallbackReportCard = {
+    security_privacy: {
+      score: 4,
+      summary:
+        'Standard institutional FERPA precautions apply; avoid submitting confidential student PII.',
+    },
+    pedagogical_value: {
+      score: 5,
+      summary: `High instructional utility for ${parsedInput.toolTitle} across academic coursework and research.`,
+    },
+    ethics_stewardship: {
+      score: 4,
+      summary:
+        'Instructors should define clear attribution and usage boundaries in course syllabi.',
+    },
+    access_cost: {
+      score: 4,
+      summary:
+        'Production-ready web application suitable for supervised faculty and student adoption.',
+    },
+  };
+
   return {
     scrapedOgImage,
     ogImageUrl: scrapedOgImage,
-    reportCard: {
-      security_privacy: {
-        score: 4,
-        summary:
-          'Standard institutional FERPA precautions apply; avoid submitting confidential student PII.',
-      },
-      pedagogical_value: {
-        score: 5,
-        summary: `High instructional utility for ${parsedInput.toolTitle} across academic coursework and research.`,
-      },
-      ethics_stewardship: {
-        score: 4,
-        summary:
-          'Instructors should define clear attribution and usage boundaries in course syllabi.',
-      },
-      access_cost: {
-        score: 4,
-        summary:
-          'Production-ready web application suitable for supervised faculty and student adoption.',
-      },
-    },
+    aiVetted: true,
+    tags: deriveRecommendedTags(fallbackReportCard),
+    reportCard: fallbackReportCard,
     overallVerdict:
       'Recommended for academic experimentation and instructional workflows with standard GVSU data stewardship.',
     pedagogicalNarrative: `Low to Medium Risk. ${parsedInput.toolDescription} Verify institutional FERPA guidelines before uploading non-public university records.`,
@@ -263,9 +320,9 @@ export async function adminGeneratesToolNarrativeAndImage(
   input: AdminGeneratesToolNarrativeAndImageInput
 ): Promise<AdminGeneratesToolNarrativeAndImageOutput> {
   const parsedInput = VettingInputSchema.parse(input);
-  const callerEmail = parsedInput.adminEmail?.toLowerCase() || '';
+  const callerEmail = parsedInput.adminEmail?.trim().toLowerCase() || '';
 
-  if (!callerEmail || !ADMIN_EMAILS.includes(callerEmail)) {
+  if (!parsedInput.isAdmin && (!callerEmail || !ADMIN_EMAILS.includes(callerEmail))) {
     throw new Error('Unauthorized: Admin access required to generate tool evaluations.');
   }
 

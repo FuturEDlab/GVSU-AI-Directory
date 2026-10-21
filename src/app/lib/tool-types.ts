@@ -3,6 +3,7 @@ export type ToolStatus =
   | "Submitted" 
   | "In Progress" 
   | "Review" 
+  | "Audited - Ready for Approval"
   | "Pending" 
   | "Updated" 
   | "Completed" 
@@ -14,6 +15,7 @@ export const TOOL_STAGES: ToolStatus[] = [
   "Submitted",
   "In Progress",
   "Review",
+  "Audited - Ready for Approval",
   "Pending",
   "Updated",
   "Completed",
