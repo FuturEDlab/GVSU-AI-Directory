@@ -13,9 +13,9 @@ test.describe('Homepage & Search E2E Flows', () => {
 
   test('opens homepage and verifies header & main title elements', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/LakerAI Directory/i);
+    await expect(page).toHaveTitle(/\(Unofficial\) GVSU LakerAI Directory/i);
     await expect(page.locator('header')).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Institutional/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /\(Unofficial\) Institutional LakerAI Hub/i })).toBeVisible();
   });
 
   test('searches for tool and verifies directory results container', async ({ page }) => {

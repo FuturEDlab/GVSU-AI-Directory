@@ -82,7 +82,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
               GRAND VALLEY STATE UNIVERSITY
             </span>
             <span className="text-slate-600 font-sans text-xs font-semibold tracking-wider uppercase mt-0.5">
-              LakerAI Directory
+              (Unofficial) LakerAI Directory
             </span>
           </div>
         </div>
@@ -199,7 +199,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
                     Grand Valley State University
                   </span>
                   <SheetTitle className="font-sans text-xl font-bold text-gvsuBlue tracking-tight">
-                    LakerAI Directory
+                    (Unofficial) LakerAI Directory
                   </SheetTitle>
                 </div>
                 {user && (
@@ -385,7 +385,7 @@ export function GVSUHeader({ searchQuery: propSearchQuery, onSearchChange }: GVS
               <div className="flex items-center gap-2 mt-1">
                 <span className="h-0.5 w-4 bg-gvsuBlue rounded-full hidden sm:inline-block" />
                 <span className="text-slate-600 font-sans text-[10px] sm:text-xs font-bold tracking-[0.14em] uppercase leading-none">
-                  LakerAI Directory
+                  (Unofficial) LakerAI Directory
                 </span>
               </div>
             </div>

@@ -15,7 +15,7 @@ export function GVSUFooter() {
                 Grand Valley State University
               </span>
               <span className="text-slate-600 text-xs font-bold uppercase tracking-[0.16em] mt-1">
-                LakerAI Institutional Directory
+                (Unofficial) LakerAI Institutional Directory
               </span>
             </div>
             <p className="text-slate-600 text-sm leading-relaxed max-w-md">

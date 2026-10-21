@@ -197,7 +197,7 @@ export default function Home() {
           </Badge>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-sans font-bold text-[#0F172A] leading-tight mb-4 tracking-tight">
-            Institutional <span className="text-gvsuBlue">LakerAI Hub</span>
+            (Unofficial) Institutional <span className="text-gvsuBlue">LakerAI Hub</span>
           </h1>
 
           <p className="text-sm sm:text-base md:text-lg text-slate-700 max-w-2xl mx-auto mb-8 leading-relaxed">

@@ -10,7 +10,7 @@ import { GlobalAIDisclaimer } from "@/components/GlobalAIDisclaimer";
 import { ThemeSync } from "@/components/ThemeSync";
 
 export const metadata: Metadata = {
-  title: 'LakerAI Directory | Grand Valley State University',
+  title: '(Unofficial) GVSU LakerAI Directory',
   description: 'The institutional AI resource directory, governance scorecard, and prompt library for Grand Valley State University.',
 };
 
